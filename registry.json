@@ -1,0 +1,34 @@
+{
+  "owner": "Jeffrey0117",
+  "convention": "每個 kit：單檔 index.js（零依賴）+ README(含真實 wiring)+ example.js + package.json + LICENSE(MIT) + .gitignore。factory pattern：module.exports = function create(opts){...}。",
+  "kits": [
+    {
+      "name": "funnel-kit",
+      "covers": "第一方轉換漏斗分析、事件追蹤、來源/referrer 統計",
+      "repo": "https://github.com/Jeffrey0117/funnel-kit",
+      "install": "npm i github:Jeffrey0117/funnel-kit",
+      "keywords": ["analytics", "funnel", "conversion", "tracking", "events", "referrer", "來源", "漏斗", "數據", "轉換", "埋點"]
+    },
+    {
+      "name": "media-gate",
+      "covers": "媒體存取防護：簽章 token、路徑穿越防護、HLS 授權、付費牆真防護",
+      "repo": "https://github.com/Jeffrey0117/media-gate",
+      "install": "npm i github:Jeffrey0117/media-gate",
+      "keywords": ["media", "paywall", "signed-url", "token", "hls", "traversal", "video", "付費牆", "影片", "串流", "防護", "簽章", "存取控制"]
+    },
+    {
+      "name": "auth-kit",
+      "covers": "無函式庫驗證原語：PBKDF2 密碼雜湊 + HMAC-SHA256 JWT",
+      "repo": "https://github.com/Jeffrey0117/auth-kit",
+      "install": "npm i github:Jeffrey0117/auth-kit",
+      "keywords": ["auth", "jwt", "password", "pbkdf2", "login", "session", "登入", "註冊", "驗證", "密碼", "會員"]
+    },
+    {
+      "name": "ratelimit-kit",
+      "covers": "每 key（IP）滑動視窗限流、防濫用/防灌爆",
+      "repo": "https://github.com/Jeffrey0117/ratelimit-kit",
+      "install": "npm i github:Jeffrey0117/ratelimit-kit",
+      "keywords": ["ratelimit", "throttle", "ddos", "abuse", "sliding-window", "限流", "濫用", "防護", "flood"]
+    }
+  ]
+}

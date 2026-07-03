@@ -1,0 +1,15 @@
+{
+  "name": "kit-forge",
+  "version": "0.1.0",
+  "description": "抽 kit 的 kit — 維護一套個人 kit 生態系：查現有 kit（有就強化/整合、沒有才抽新），統一 scaffold + 一鍵建 GitHub repo。零依賴。",
+  "main": "index.js",
+  "bin": {
+    "kit-forge": "cli.js"
+  },
+  "scripts": {
+    "list": "node cli.js list"
+  },
+  "keywords": ["kit", "scaffold", "monorepo", "codegen", "registry", "meta", "zero-dependency"],
+  "author": "Jeffrey0117",
+  "license": "MIT"
+}
