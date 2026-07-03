@@ -1,17 +1,17 @@
-# kit-forge 🏭
+# kit-kit 🍫
 
-**抽 kit 的 kit。** 維護一套個人 kit 生態系 —— 別的專案跑它，它**熟知現有有哪些 kit**：
+**抽 kit 的 kit（kit²）。** 維護一套個人 kit 生態系 —— 別的專案跑它，它**熟知現有有哪些 kit**：
 有涵蓋的就去**強化/補充/整合**，沒有的才**抽一個新 kit**。統一 scaffold + 一鍵建 GitHub repo。
 
-> 遞迴的一環：funnel-kit / media-gate / auth-kit / ratelimit-kit 是「零件」，kit-forge 是「工廠 + 大腦」。
+> 遞迴的一環：funnel-kit / media-gate / auth-kit / ratelimit-kit 是「零件」，kit-kit 是「工廠 + 大腦」。
 > 目標：每個專案都拿到最強、最完整版；改一次 kit，全體升級（複利）。
 
 ## 用法
 
 ```bash
-npx github:Jeffrey0117/kit-forge list                    # 現有有哪些 kit
-npx github:Jeffrey0117/kit-forge check "使用者登入 密碼"  # 有現成的嗎？→ 有就用/強化，沒有才抽
-npx github:Jeffrey0117/kit-forge new my-kit --desc "…" --repo   # 抽新 kit + 建 repo
+npx github:Jeffrey0117/kit-kit list                    # 現有有哪些 kit
+npx github:Jeffrey0117/kit-kit check "使用者登入 密碼"  # 有現成的嗎？→ 有就用/強化，沒有才抽
+npx github:Jeffrey0117/kit-kit new my-kit --desc "…" --repo   # 抽新 kit + 建 repo
 ```
 
 `check` 範例輸出：
@@ -38,7 +38,7 @@ npx github:Jeffrey0117/kit-forge new my-kit --desc "…" --repo   # 抽新 kit +
 ## 當 lib 用
 
 ```js
-const forge = require('kit-forge');
+const forge = require('kit-kit');
 const reg = forge.loadRegistry();
 forge.recommend('限流 防濫用', reg.kits);  // { action:'reuse'|'extract', kit, ranked }
 forge.scaffold('my-kit', './my-kit', { description: '…' });

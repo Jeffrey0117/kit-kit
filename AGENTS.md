@@ -1,4 +1,4 @@
-# kit-forge 協定（給在任何專案裡跑的 agent）
+# kit-kit 協定（給在任何專案裡跑的 agent）
 
 你在某個專案工作、發現一塊「不只這個專案會用到」的通用邏輯時，**照這個流程走**，維護 Jeff 的 kit 生態系（每個專案都拿到最強、最完整版；改一次 kit 全體升級）。
 
@@ -7,12 +7,12 @@
 
 ## 決策流程（硬性順序）
 
-1. **先查現有 kit**：`npx kit-forge check "這塊在幹嘛 關鍵字"`（或讀 `registry.json`）。
+1. **先查現有 kit**：`npx kit-kit check "這塊在幹嘛 關鍵字"`（或讀 `registry.json`）。
 2. **有 kit 涵蓋** → **不要重造**。三選一：
    - **整合**：讓這個專案改用該 kit（內嵌 copy 或 `npm i github:...`）。
    - **強化**：如果本專案這版更強（多了 timing-safe、修了 bug、多了功能）→ 把改進**上游回該 kit repo**，再讓大家升級。
    - **補充**：該 kit 缺一塊、但屬於它的範疇 → 加進那個 kit，別開新 repo。
-3. **沒有 kit 涵蓋** → **抽新的**：`npx kit-forge new <name> --desc "..." --repo`，然後：
+3. **沒有 kit 涵蓋** → **抽新的**：`npx kit-kit new <name> --desc "..." --repo`，然後：
    - 把通用核心填進 `index.js`（app-specific 的東西用 `opts` 注入）。
    - README 寫**真實 wiring 範例**（別人照著就能接）。
    - `example.js` 要能 `node example.js` 跑起來。

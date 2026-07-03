@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-// kit-forge CLI —  list / check / new
-//   kit-forge list                          列出現有 kit（registry + 選用 gh 即時撈）
-//   kit-forge check "使用者登入 密碼"        查有沒有現成 kit 能用（有→強化，沒有→抽）
-//   kit-forge new <name> [--desc "..."] [--repo]   抽新 kit（scaffold；--repo 連 GitHub 一起建）
+// kit-kit CLI —  list / check / new
+//   kit-kit list                          列出現有 kit（registry + 選用 gh 即時撈）
+//   kit-kit check "使用者登入 密碼"        查有沒有現成 kit 能用（有→強化，沒有→抽）
+//   kit-kit new <name> [--desc "..."] [--repo]   抽新 kit（scaffold；--repo 連 GitHub 一起建）
 const path = require('path');
 const forge = require('./index');
 
@@ -27,7 +27,7 @@ function main() {
 
   if (cmd === 'check') {
     const q = rest.filter((a) => !a.startsWith('--')).join(' ');
-    if (!q) return console.error('用法: kit-forge check "描述或關鍵字"');
+    if (!q) return console.error('用法: kit-kit check "描述或關鍵字"');
     const r = forge.recommend(q, reg.kits);
     console.log(`\n🔎 查詢：${q}\n`);
     if (r.action === 'reuse') {
@@ -37,7 +37,7 @@ function main() {
       console.log(`   命中：${r.why.join(', ')}`);
     } else {
       console.log(`🆕 沒有現成 kit 涵蓋 → 建議「抽一個新 kit」：`);
-      console.log(`   kit-forge new <name> --desc "..." --repo`);
+      console.log(`   kit-kit new <name> --desc "..." --repo`);
     }
     const others = r.ranked.filter((x) => x.score > 0 && x.kit !== r.kit).slice(0, 3);
     if (others.length) { console.log('\n   相關：'); others.forEach((x) => console.log(`   - ${x.kit.name} (score ${x.score})`)); }
@@ -47,7 +47,7 @@ function main() {
 
   if (cmd === 'new') {
     const name = rest.find((a) => !a.startsWith('--'));
-    if (!name) return console.error('用法: kit-forge new <name> [--desc "..."] [--dir path] [--repo]');
+    if (!name) return console.error('用法: kit-kit new <name> [--desc "..."] [--dir path] [--repo]');
     const desc = typeof flag('desc') === 'string' ? flag('desc') : undefined;
     // 先擋一下：跟現有 kit 是否重疊
     const r = forge.recommend(name + ' ' + (desc || ''), reg.kits);
@@ -74,10 +74,27 @@ function main() {
     return;
   }
 
-  console.log(`kit-forge — 抽 kit 的 kit
-  kit-forge list                          列出現有 kit
-  kit-forge check "描述/關鍵字"           有現成的就強化、沒有才抽
-  kit-forge new <name> [--desc] [--repo]  抽新 kit（scaffold；--repo 一起建 GitHub）
+  if (cmd === 'update') {
+    const name = rest.find((a) => !a.startsWith('--'));
+    if (!name) return console.error('用法: kit-kit update <kit> [--dir path]');
+    const known = reg.kits.find((k) => k.name === name);
+    if (!known) console.log(`\n⚠️  「${name}」不在 registry；還是照 GitHub 上的 ${reg.owner}/${name} 抓抓看…`);
+    const dir = typeof flag('dir') === 'string' ? require('path').resolve(flag('dir'), name) : undefined;
+    try {
+      const out = forge.pullKit(name, dir, reg.owner);
+      console.log(`\n🔧 ${name} 已拉到 → ${out}`);
+      console.log(`   補強/修/加功能後：cd 進去 → git commit -am "..." → git push`);
+      if (known) console.log(`   （${known.covers}）`);
+      console.log('');
+    } catch (e) { console.error('   ✗ 拉取失敗：', e.message); }
+    return;
+  }
+
+  console.log(`kit-kit 🍫 — 抽 kit 的 kit（kit²）
+  kit-kit list                          列出現有 kit
+  kit-kit check "描述/關鍵字"           有現成的就強化、沒有才抽
+  kit-kit new <name> [--desc] [--repo]  抽新 kit（scaffold；--repo 一起建 GitHub）
+  kit-kit update <kit> [--dir path]     補/更新現有 kit（clone 下來改 → commit+push）
 `);
 }
 

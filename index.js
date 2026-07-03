@@ -1,5 +1,5 @@
 // ============================================================================
-// kit-forge — 抽 kit 的 kit（別的專案跑它，維護你的 kit 生態系）
+// kit-kit — 抽 kit 的 kit（別的專案跑它，維護你的 kit 生態系）
 // ----------------------------------------------------------------------------
 // 遞迴的一環：把「抽 kit 這件事」做成工具。核心規則——
 //   找到一塊可複用的東西 → 查現有 kit：
@@ -92,6 +92,18 @@ function publish(dir, name, description, owner = 'Jeffrey0117') {
   return run(`gh repo create ${owner}/${name} --public --source=. --remote=origin --push --description "${desc}"`);
 }
 
+// ── 補/更新現有 kit：clone（或 pull）下來讓 agent 補強/修/加功能 → 改完 commit + push 回去 ──
+// 這就是「神遞迴」的閉環：不只抽新的，還能持續升級舊的，全體專案跟著變強。
+function pullKit(name, targetDir, owner = 'Jeffrey0117') {
+  const dir = targetDir || path.join(process.cwd(), name);
+  if (fs.existsSync(path.join(dir, '.git'))) {
+    cp.execSync('git pull -q', { cwd: dir, stdio: 'inherit' });
+  } else {
+    cp.execSync(`gh repo clone ${owner}/${name} "${dir}"`, { stdio: 'inherit' });
+  }
+  return dir;
+}
+
 // ── 把新 kit 加進 registry ──
 function addToRegistry(registryPath, entry) {
   const p = registryPath || path.join(__dirname, 'registry.json');
@@ -182,5 +194,5 @@ SOFTWARE.
 
 module.exports = {
   loadRegistry, syncFromGitHub, checkOverlap, recommend,
-  scaffold, publish, addToRegistry,
+  scaffold, publish, addToRegistry, pullKit,
 };
