@@ -7,28 +7,180 @@
       "covers": "第一方轉換漏斗分析、事件追蹤、來源/referrer 統計",
       "repo": "https://github.com/Jeffrey0117/funnel-kit",
       "install": "npm i github:Jeffrey0117/funnel-kit",
-      "keywords": ["analytics", "funnel", "conversion", "tracking", "events", "referrer", "來源", "漏斗", "數據", "轉換", "埋點"]
+      "keywords": [
+        "analytics",
+        "funnel",
+        "conversion",
+        "tracking",
+        "events",
+        "referrer",
+        "來源",
+        "漏斗",
+        "數據",
+        "轉換",
+        "埋點"
+      ]
     },
     {
       "name": "media-gate",
       "covers": "媒體存取防護：簽章 token、路徑穿越防護、HLS 授權、付費牆真防護",
       "repo": "https://github.com/Jeffrey0117/media-gate",
       "install": "npm i github:Jeffrey0117/media-gate",
-      "keywords": ["media", "paywall", "signed-url", "token", "hls", "traversal", "video", "付費牆", "影片", "串流", "防護", "簽章", "存取控制"]
+      "keywords": [
+        "media",
+        "paywall",
+        "signed-url",
+        "token",
+        "hls",
+        "traversal",
+        "video",
+        "付費牆",
+        "影片",
+        "串流",
+        "防護",
+        "簽章",
+        "存取控制"
+      ]
     },
     {
       "name": "auth-kit",
       "covers": "無函式庫驗證原語：PBKDF2 密碼雜湊 + HMAC-SHA256 JWT",
       "repo": "https://github.com/Jeffrey0117/auth-kit",
       "install": "npm i github:Jeffrey0117/auth-kit",
-      "keywords": ["auth", "jwt", "password", "pbkdf2", "login", "session", "登入", "註冊", "驗證", "密碼", "會員"]
+      "keywords": [
+        "auth",
+        "jwt",
+        "password",
+        "pbkdf2",
+        "login",
+        "session",
+        "登入",
+        "註冊",
+        "驗證",
+        "密碼",
+        "會員"
+      ]
     },
     {
       "name": "ratelimit-kit",
       "covers": "每 key（IP）滑動視窗限流、防濫用/防灌爆",
       "repo": "https://github.com/Jeffrey0117/ratelimit-kit",
       "install": "npm i github:Jeffrey0117/ratelimit-kit",
-      "keywords": ["ratelimit", "throttle", "ddos", "abuse", "sliding-window", "限流", "濫用", "防護", "flood"]
+      "keywords": [
+        "ratelimit",
+        "throttle",
+        "ddos",
+        "abuse",
+        "sliding-window",
+        "限流",
+        "濫用",
+        "防護",
+        "flood"
+      ]
+    },
+    {
+      "name": "onboarding-kit",
+      "type": "component",
+      "covers": "新手導覽/引導元件（高亮卡+下一步，React+Tailwind，shadcn 式）",
+      "repo": "https://github.com/Jeffrey0117/onboarding-kit",
+      "install": "複製元件（shadcn 式）",
+      "keywords": [
+        "onboarding",
+        "tour",
+        "walkthrough",
+        "導覽",
+        "新手",
+        "引導",
+        "highlight",
+        "react",
+        "tailwind",
+        "教學"
+      ]
+    },
+    {
+      "name": "payuni-embed-kit",
+      "type": "kit",
+      "covers": "PAYUNi 嵌入式付款/金流串接",
+      "repo": "https://github.com/Jeffrey0117/payuni-embed-kit",
+      "install": "npm i github:Jeffrey0117/payuni-embed-kit",
+      "keywords": [
+        "payuni",
+        "payment",
+        "金流",
+        "付款",
+        "訂閱",
+        "embed",
+        "checkout",
+        "刷卡"
+      ]
+    },
+    {
+      "name": "PayGate",
+      "type": "service",
+      "covers": "統一金流服務：付款 webhook 接收 + 購買狀態查詢（跑在 :4019）",
+      "repo": "https://github.com/Jeffrey0117/PayGate",
+      "install": "跑服務、用 API",
+      "keywords": [
+        "payment",
+        "webhook",
+        "金流",
+        "購買",
+        "付款",
+        "purchase",
+        "paygate",
+        "訂單"
+      ]
+    },
+    {
+      "name": "Pokkit",
+      "type": "service",
+      "covers": "自架檔案儲存服務（storage server）",
+      "repo": "https://github.com/Jeffrey0117/Pokkit",
+      "install": "跑服務、用 API",
+      "keywords": [
+        "storage",
+        "file",
+        "upload",
+        "檔案",
+        "儲存",
+        "self-hosted",
+        "pokkit",
+        "cdn"
+      ]
+    },
+    {
+      "name": "dropkit",
+      "type": "template",
+      "covers": "config-driven 投稿/報名入口（招募/作業/文章/活動）",
+      "repo": "https://github.com/Jeffrey0117/dropkit",
+      "install": "clone 當模板",
+      "keywords": [
+        "submission",
+        "form",
+        "portal",
+        "投稿",
+        "報名",
+        "recruiting",
+        "表單",
+        "收件"
+      ]
+    },
+    {
+      "name": "LaunchKit",
+      "type": "template",
+      "covers": "JSON→Landing Page 產生器（用 config 生產品頁）",
+      "repo": "https://github.com/Jeffrey0117/LaunchKit",
+      "install": "clone 當模板",
+      "keywords": [
+        "landing",
+        "page",
+        "generator",
+        "marketing",
+        "產品頁",
+        "落地頁",
+        "json",
+        "官網"
+      ]
     }
   ]
 }
