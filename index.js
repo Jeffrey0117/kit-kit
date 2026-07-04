@@ -113,6 +113,27 @@ function addToRegistry(registryPath, entry) {
   return reg;
 }
 
+// ── map：掃專案，看哪個專案宣告採用了哪些 kit（application 層的採用地圖）──
+function listProjectDirs(baseDir) {
+  try {
+    return fs.readdirSync(baseDir)
+      .map((n) => path.join(baseDir, n))
+      .filter((d) => { try { return fs.statSync(d).isDirectory() && fs.existsSync(path.join(d, 'package.json')); } catch (e) { return false; } });
+  } catch (e) { return []; }
+}
+function scanAdoption(projectDirs, kits, owner = 'Jeffrey0117') {
+  const rows = [];
+  for (const dir of projectDirs) {
+    let pkg;
+    try { pkg = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf8')); } catch (e) { continue; }
+    const deps = Object.assign({}, pkg.dependencies, pkg.devDependencies, pkg.peerDependencies);
+    const blob = Object.entries(deps).map(([k, v]) => k + ' ' + v).join(' ');
+    const used = kits.filter((k) => deps[k.name] || blob.includes(`${owner}/${k.name}`)).map((k) => k.name);
+    rows.push({ project: path.basename(dir), used });
+  }
+  return rows;
+}
+
 // ── init：勾選 kit → 產一個已組好的專案骨架 ──
 function camelCase(s) { return String(s).replace(/[-_](.)/g, (_, c) => c.toUpperCase()); }
 function initProject(name, targetDir, selectedNames, allKits, owner = 'Jeffrey0117') {
@@ -219,4 +240,5 @@ SOFTWARE.
 module.exports = {
   loadRegistry, syncFromGitHub, checkOverlap, recommend,
   scaffold, publish, addToRegistry, pullKit, initProject,
+  listProjectDirs, scanAdoption,
 };

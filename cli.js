@@ -89,6 +89,27 @@ async function main() {
     return;
   }
 
+  if (cmd === 'map') {
+    const base = rest.find((a) => !a.startsWith('--')) || require('path').resolve(__dirname, '..');
+    const dirs = forge.listProjectDirs(base);
+    const rows = forge.scanAdoption(dirs, reg.kits, reg.owner);
+    const adopted = rows.filter((r) => r.used.length);
+    console.log(`\n📊 kit 採用地圖　（掃 ${dirs.length} 個專案 @ ${base}）\n`);
+    if (!adopted.length) console.log('  還沒有專案用 package.json 正式宣告採用任何 kit（內嵌 copy 不算）。');
+    adopted.forEach((r) => console.log(`  ${r.project.padEnd(22)} ${r.used.join(', ')}`));
+    const counts = {};
+    rows.forEach((r) => r.used.forEach((n) => { counts[n] = (counts[n] || 0) + 1; }));
+    const ranked = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    if (ranked.length) {
+      console.log('\n  每個 kit 被幾個專案採用：');
+      ranked.forEach(([n, c]) => console.log(`    ${n.padEnd(22)} ${c}`));
+    }
+    const zero = reg.kits.map((k) => k.name).filter((n) => !counts[n]);
+    if (zero.length) console.log(`\n  ⚠️ 還沒被任何專案採用（回套機會）：${zero.join(', ')}`);
+    console.log('\n  （只算 package.json 宣告的 dep；內嵌 copy 不計 → 正好鼓勵把內嵌轉成正式採用）\n');
+    return;
+  }
+
   if (cmd === 'init') {
     const name = rest.find((a) => !a.startsWith('--'));
     if (!name) return console.error('用法: kit-kit init <project> [--with a,b,c] [--dir path]');
@@ -130,6 +151,7 @@ async function main() {
   kit-kit new <name> [--desc] [--repo]  抽新 kit（scaffold；--repo 一起建 GitHub）
   kit-kit update <kit> [--dir path]     補/更新現有 kit（clone 下來改 → commit+push）
   kit-kit init <project> [--with a,b,c] 勾選 kit → 產一個已組好的專案骨架
+  kit-kit map [baseDir]                 採用地圖：哪個專案用了哪些 kit + 誰還沒回套
 `);
 }
 
