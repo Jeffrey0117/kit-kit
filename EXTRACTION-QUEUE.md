@@ -22,8 +22,11 @@ survey 來源：meetube（Vue3/Shaka）、coursebloom（Next16/TS/Supabase）。
 - **payuni-embed-kit ← 併入 coursebloom `packages/payuni-sdk/`**：完整 PAYUNi SDK（AES/簽章驗證 + 一次性**與訂閱** webhook + 定價計算 + Next/Express adapter）。補上 embed kit 缺的訂閱 webhook。**這塊已經是抽好的 workspace package，folding 成本最低。**
 - **auth-kit ← 遷 meetube/其他專案的登入過去**（meetube 是 session+bcrypt，可換成 auth-kit 的 PBKDF2+JWT）。
 
-## 👑 皇冠（大工程，單獨排）
-- **shaka-player-vue** — meetube 的 Shaka+Vue 播放器（VR/劇院/PiP/EQ/字幕/快捷鍵，FreeTube 血統）。價值最高但跟 meetube 綁死（~49 個 Vuex getter、SponsorBlock、i18n）。**先做去耦重構**（getter 牆→props/inject、SponsorBlock 選配），或先摘 `player-components/` 的 11 個 Shaka UI 按鈕 + `helpers/player/utils.js` 當低風險第一刀。
+## 👑 皇冠 → 已用「headless 核心」的方式做（比硬抽 Shaka 對）
+- ✅ **video-core-kit** v0.1 — 三站播放器功能聯集的 headless 香草核心 → https://github.com/Jeffrey0117/video-core-kit
+  - 未完成（human 要收尾）：(1) 預覽→正片無縫切時機目前靠 `loadedmetadata`，實務要改 gate 在 HLS `MANIFEST_PARSED`/首段 buffered，避免看得到 re-buffer；(2) YouTube adapter 自建 iframe、`startTime`/`poster` 對 youtube 型是 no-op，要對齊各站容器；(3) 只有 illustrative example，還沒有 browser/jsdom mock-Hls 冒煙測試。
+  - 下一步（真正的回套）：`video-core-react`（coursebloom 殼）、`video-core-vue`（meetube 殼）、`video-core-vanilla`（lurlhub 殼）—— 在殼裡接真 hls.js/Shaka 就會把上面三個 gap 驗掉。
+- 可選第一刀：meetube `player-components/` 的 11 個 Shaka UI 按鈕 + `helpers/player/utils.js`（近乎獨立的 Shaka UI 擴充）。
 
 ## 🚫 留在 template repo（太 app-coupled，不進 kit 生態系）
 - coursebloom **分潤/推薦系統**（cookie last-click、per-tenant、佣金 hold-days、撥款流程）—— 設計好但每個 query 綁 Supabase+tenant。只有 `types/affiliate.ts` 和佣金計算 math 可抽。
