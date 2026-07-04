@@ -198,6 +198,23 @@
         "逾時",
         "timeout"
       ]
+    },
+    {
+      "name": "seo-schema-kit",
+      "type": "kit",
+      "covers": "schema.org/JSON-LD 結構化資料產生器（Article/Course/FAQ/Breadcrumb/Organization…），SSR 友善",
+      "repo": "https://github.com/Jeffrey0117/seo-schema-kit",
+      "install": "npm i github:Jeffrey0117/seo-schema-kit",
+      "keywords": [
+        "seo",
+        "schema-org",
+        "json-ld",
+        "structured-data",
+        "結構化資料",
+        "rich-results",
+        "複合式搜尋結果",
+        "meta"
+      ]
     }
   ]
 }
