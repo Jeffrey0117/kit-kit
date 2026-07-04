@@ -100,18 +100,20 @@
     {
       "name": "payuni-embed-kit",
       "type": "kit",
-      "covers": "PAYUNi 嵌入式付款/金流串接",
+      "covers": "台灣 PayUni 統一金流完整 kit：免跳轉 embed + server SDK（訂閱扣款 webhook + CheckCode 簽章驗證 + 付款請求生成 + 金額計算）",
       "repo": "https://github.com/Jeffrey0117/payuni-embed-kit",
       "install": "npm i github:Jeffrey0117/payuni-embed-kit",
       "keywords": [
         "payuni",
+        "統一金流",
         "payment",
+        "taiwan",
         "金流",
-        "付款",
-        "訂閱",
-        "embed",
-        "checkout",
-        "刷卡"
+        "subscription",
+        "續期收款",
+        "webhook",
+        "checkcode",
+        "免跳轉"
       ]
     },
     {
