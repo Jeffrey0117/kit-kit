@@ -5,7 +5,7 @@ survey 來源：meetube（Vue3/Shaka）、coursebloom（Next16/TS/Supabase）。
 ## ✅ 已抽
 - **retry-kit** — 指數退避重試（meetube `helpers/retry.js`）→ https://github.com/Jeffrey0117/retry-kit
 - **seo-schema-kit** — schema.org/JSON-LD 產生器（coursebloom `lib/seo/schema-org.ts`）→ https://github.com/Jeffrey0117/seo-schema-kit
-- 🔄 **audio-dsp-kit** — Web Audio EQ+音效+增益（meetube `helpers/{equalizer,audio-effects,audio-gain}.js`）
+- **audio-dsp-kit** — Web Audio EQ+音效+增益（meetube `helpers/{equalizer,audio-effects,audio-gain}.js`）→ https://github.com/Jeffrey0117/audio-dsp-kit
 
 ## 🟢 高價值、乾淨（下一批）
 - **ai-content-kit** — LLM 內容產生器（文章/銷售頁/DALL-E 封面），coursebloom `lib/ai/{article-generator,deepseek,image-generator}.ts`。低耦合（只抽 generator，Supabase/credit 留在 action 層）。provider 可做成可換（走 AI gateway/Claude）。

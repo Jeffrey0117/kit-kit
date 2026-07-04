@@ -215,6 +215,24 @@
         "複合式搜尋結果",
         "meta"
       ]
+    },
+    {
+      "name": "audio-dsp-kit",
+      "type": "kit",
+      "covers": "Web Audio 等化器(5-band/22 預設)+音效(立體聲寬度/單聲道/混響)+音量增益，注入 AudioContext",
+      "repo": "https://github.com/Jeffrey0117/audio-dsp-kit",
+      "install": "npm i github:Jeffrey0117/audio-dsp-kit",
+      "keywords": [
+        "web-audio",
+        "equalizer",
+        "audio-effects",
+        "dsp",
+        "reverb",
+        "gain",
+        "等化器",
+        "音效",
+        "混響"
+      ]
     }
   ]
 }
