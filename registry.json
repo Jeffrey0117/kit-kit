@@ -324,6 +324,23 @@
         "縮圖",
         "預覽"
       ]
+    },
+    {
+      "name": "youtube-player-kit",
+      "type": "component",
+      "covers": "自訂控制的 YouTube 播放器 React 元件（自訂控制列/±10s/進度回呼/健康檢查 fallback），shadcn 式；HLS 請用 video-core-kit",
+      "repo": "https://github.com/Jeffrey0117/youtube-player-kit",
+      "install": "複製 src/（peer: react, @radix-ui/react-slider, lucide-react, Tailwind）",
+      "keywords": [
+        "youtube",
+        "player",
+        "react",
+        "video",
+        "iframe-api",
+        "播放器",
+        "課程",
+        "shadcn"
+      ]
     }
   ]
 }
