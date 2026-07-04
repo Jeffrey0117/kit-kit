@@ -12,6 +12,7 @@ survey 來源：meetube（Vue3/Shaka）、coursebloom（Next16/TS/Supabase）。
 - **bilingual-subtitle-kit** — VTT 漸進翻譯 + IDB 快取（meetube `helpers/{bilingual-subtitle,subtitle-cache}.js` + `/api/translate/batch`）。原創功能，配 player 用。
 
 ## 🧩 React/shadcn 元件（clean、data-driven，可做成 component kit 或 `coursebloom-ui` 一組）
+- ✅ **youtube-player-kit** https://github.com/Jeffrey0117/youtube-player-kit ・ ✅ **chat-ui-kit** https://github.com/Jeffrey0117/chat-ui-kit
 - **sales-page-builder** — 拖拉式分段落地頁編輯器（9 種區塊），coursebloom `components/sales-page/*`（@hello-pangea/dnd + rhf）。配 ai-content-kit 的銷售頁 generator。
 - **bio-kit** — link-in-bio 頁（carousel/可展開/產品/評論/影片卡），coursebloom `components/bio/*`。本身就能當獨立產品。
 - **youtube-player-kit** — 自訂控制 YouTube 播放器（±10s、進度回呼、健康檢查 fallback），coursebloom `components/course/CustomYouTubePlayer.tsx`。注意：HLS/自架影片走 **media-gate**，這個是 YouTube 內嵌。

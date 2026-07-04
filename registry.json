@@ -341,6 +341,23 @@
         "課程",
         "shadcn"
       ]
+    },
+    {
+      "name": "chat-ui-kit",
+      "type": "component",
+      "covers": "純展示聊天 UI React 元件組（訊息泡泡/輸入框/對話列表），shadcn 式、內建 primitives 可獨立跑",
+      "repo": "https://github.com/Jeffrey0117/chat-ui-kit",
+      "install": "複製 src/（peer: react, date-fns, lucide-react, Tailwind）",
+      "keywords": [
+        "chat",
+        "messaging",
+        "ui",
+        "react",
+        "shadcn",
+        "聊天",
+        "客服",
+        "訊息"
+      ]
     }
   ]
 }
