@@ -268,6 +268,23 @@
         "封面圖",
         "seo"
       ]
+    },
+    {
+      "name": "bio-kit",
+      "type": "component",
+      "covers": "Linktree/Beacons 式 link-in-bio React 元件組（carousel/可展開/產品/評論/影片/成就卡），shadcn 式、需 Tailwind",
+      "repo": "https://github.com/Jeffrey0117/bio-kit",
+      "install": "複製 src/（shadcn 式；peer: react, Tailwind）",
+      "keywords": [
+        "link-in-bio",
+        "linktree",
+        "beacons",
+        "react",
+        "bio",
+        "creator",
+        "個人頁",
+        "shadcn"
+      ]
     }
   ]
 }
