@@ -306,6 +306,24 @@
         "影片",
         "無頭"
       ]
+    },
+    {
+      "name": "storyboard-kit",
+      "type": "kit",
+      "covers": "產影片時間軸縮圖 sprite + WebVTT（播放器 hover 進度條 seek 預覽），ffmpeg",
+      "repo": "https://github.com/Jeffrey0117/storyboard-kit",
+      "install": "npm i github:Jeffrey0117/storyboard-kit",
+      "keywords": [
+        "storyboard",
+        "thumbnails",
+        "sprite",
+        "webvtt",
+        "seek-preview",
+        "scrubbing",
+        "ffmpeg",
+        "縮圖",
+        "預覽"
+      ]
     }
   ]
 }
