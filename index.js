@@ -113,6 +113,30 @@ function addToRegistry(registryPath, entry) {
   return reg;
 }
 
+// ── init：勾選 kit → 產一個已組好的專案骨架 ──
+function camelCase(s) { return String(s).replace(/[-_](.)/g, (_, c) => c.toUpperCase()); }
+function initProject(name, targetDir, selectedNames, allKits, owner = 'Jeffrey0117') {
+  const dir = targetDir || path.join(process.cwd(), name);
+  fs.mkdirSync(dir, { recursive: true });
+  const picked = selectedNames.map((n) => allKits.find((k) => k.name === n)).filter(Boolean);
+  const deps = {};
+  for (const k of picked) {
+    const t = k.type || 'kit';
+    if (t === 'kit' || t === 'component') deps[k.name] = `github:${owner}/${k.name}`; // service/template 不當 npm dep
+  }
+  fs.writeFileSync(path.join(dir, 'package.json'),
+    JSON.stringify({ name, version: '0.1.0', private: true, main: 'index.js', scripts: { start: 'node index.js' }, dependencies: deps }, null, 2) + '\n');
+  const md = `# ${name} — 組進來的 kit\n\n` + picked.map((k) =>
+    `## ${k.name}　${k.covers}\n- ${k.repo}\n- \`${k.install}\`\n`).join('\n');
+  fs.writeFileSync(path.join(dir, 'KITS.md'), md);
+  const nodeKits = picked.filter((k) => (k.type || 'kit') === 'kit');
+  const stub = '// 由 kit-kit init 產生。組進來的 kit（wiring 看各自 README）：\n' +
+    nodeKits.map((k) => `const ${camelCase(k.name)} = require('${k.name}'); // ${k.covers}`).join('\n') +
+    '\n\n// TODO: 用這些 kit 把 app 組起來\n';
+  fs.writeFileSync(path.join(dir, 'index.js'), stub);
+  return { dir, picked: picked.map((k) => k.name), deps };
+}
+
 // ── templates ──
 function tplIndex(name, desc) {
   return `// ============================================================================
@@ -194,5 +218,5 @@ SOFTWARE.
 
 module.exports = {
   loadRegistry, syncFromGitHub, checkOverlap, recommend,
-  scaffold, publish, addToRegistry, pullKit,
+  scaffold, publish, addToRegistry, pullKit, initProject,
 };

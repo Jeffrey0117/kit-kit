@@ -12,6 +12,8 @@
 npx github:Jeffrey0117/kit-kit list                    # 現有有哪些 kit
 npx github:Jeffrey0117/kit-kit check "使用者登入 密碼"  # 有現成的嗎？→ 有就用/強化，沒有才抽
 npx github:Jeffrey0117/kit-kit new my-kit --desc "…" --repo   # 抽新 kit + 建 repo
+npx github:Jeffrey0117/kit-kit update <kit>              # 補/更新現有 kit（clone→改→push）
+npx github:Jeffrey0117/kit-kit init my-app               # 勾選 kit → 產一個已組好的專案
 ```
 
 `check` 範例輸出：

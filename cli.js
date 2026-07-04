@@ -9,7 +9,22 @@ const forge = require('./index');
 const [, , cmd, ...rest] = process.argv;
 const flag = (n) => { const i = rest.indexOf('--' + n); return i >= 0 ? (rest[i + 1] && !rest[i + 1].startsWith('--') ? rest[i + 1] : true) : undefined; };
 
-function main() {
+// 互動勾選：印編號清單，讓使用者輸入要勾的（"1 3 5"）
+function interactivePick(kits) {
+  return new Promise((resolve) => {
+    const readline = require('readline');
+    console.log('\n勾選要組進來的 kit（輸入編號、空白分隔，例如「1 3 5」；Enter 跳過）：\n');
+    kits.forEach((k, i) => console.log(`  ${String(i + 1).padStart(2)}. ${k.name.padEnd(18)} ${(k.type || 'kit').padEnd(9)} ${k.covers}`));
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    rl.question('\n> ', (ans) => {
+      rl.close();
+      const idx = String(ans).split(/\s+/).map((s) => parseInt(s, 10) - 1).filter((i) => i >= 0 && i < kits.length);
+      resolve(idx.map((i) => kits[i].name));
+    });
+  });
+}
+
+async function main() {
   const reg = forge.loadRegistry();
 
   if (cmd === 'list') {
@@ -74,6 +89,25 @@ function main() {
     return;
   }
 
+  if (cmd === 'init') {
+    const name = rest.find((a) => !a.startsWith('--'));
+    if (!name) return console.error('用法: kit-kit init <project> [--with a,b,c] [--dir path]');
+    const withFlag = flag('with');
+    let selected;
+    if (typeof withFlag === 'string') selected = withFlag.split(',').map((s) => s.trim()).filter(Boolean);
+    else selected = await interactivePick(reg.kits);
+    if (!selected.length) return console.log('沒選任何 kit，取消。');
+    const unknown = selected.filter((n) => !reg.kits.find((k) => k.name === n));
+    if (unknown.length) console.log(`⚠️  registry 沒有：${unknown.join(', ')}（略過）`);
+    const dir = typeof flag('dir') === 'string' ? require('path').resolve(flag('dir'), name) : undefined;
+    const out = forge.initProject(name, dir, selected, reg.kits, reg.owner);
+    console.log(`\n🚀 ${name} 起手完成 → ${out.dir}`);
+    console.log(`   組進：${out.picked.join(', ')}`);
+    console.log(`   deps：${Object.keys(out.deps).join(', ') || '(所選為 service/template，見 KITS.md)'}`);
+    console.log(`   下一步：cd ${name} && npm i，再看 KITS.md 接線\n`);
+    return;
+  }
+
   if (cmd === 'update') {
     const name = rest.find((a) => !a.startsWith('--'));
     if (!name) return console.error('用法: kit-kit update <kit> [--dir path]');
@@ -95,6 +129,7 @@ function main() {
   kit-kit check "描述/關鍵字"           有現成的就強化、沒有才抽
   kit-kit new <name> [--desc] [--repo]  抽新 kit（scaffold；--repo 一起建 GitHub）
   kit-kit update <kit> [--dir path]     補/更新現有 kit（clone 下來改 → commit+push）
+  kit-kit init <project> [--with a,b,c] 勾選 kit → 產一個已組好的專案骨架
 `);
 }
 
