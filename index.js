@@ -121,15 +121,44 @@ function listProjectDirs(baseDir) {
       .filter((d) => { try { return fs.statSync(d).isDirectory() && fs.existsSync(path.join(d, 'package.json')); } catch (e) { return false; } });
   } catch (e) { return []; }
 }
+// 偵測「內嵌 copy」：多數專案是把 kit 的碼複製進來(檔頭留 kit 名的註解)，不走 npm dep。
+// 掃專案源碼(深度<=2、限 600 檔)，找註解裡出現 kit 名 → 視為已內嵌採用。
+function detectEmbedded(dir, kitNames) {
+  const SKIP = new Set(['node_modules', '.git', 'dist', 'build', '.next', 'coverage', '.turbo', 'out', 'vendor']);
+  const EXT = new Set(['.js', '.ts', '.mjs', '.cjs', '.jsx', '.tsx', '.vue', '.svelte']);
+  const alt = kitNames.map((n) => n.replace(/[-]/g, '\\-')).join('|');
+  const re = new RegExp('(?://|\\*|#).{0,80}\\b(' + alt + ')\\b');
+  const found = new Set();
+  let checked = 0;
+  function walk(d, depth) {
+    if (depth > 2 || checked > 600 || found.size === kitNames.length) return;
+    let ents; try { ents = fs.readdirSync(d, { withFileTypes: true }); } catch (e) { return; }
+    for (const e of ents) {
+      if (checked > 600 || found.size === kitNames.length) return;
+      if (e.isDirectory()) { if (!SKIP.has(e.name)) walk(path.join(d, e.name), depth + 1); }
+      else if (EXT.has(path.extname(e.name))) {
+        checked++;
+        let head; try { head = fs.readFileSync(path.join(d, e.name), 'utf8').slice(0, 500); } catch (er) { continue; }
+        const rx = new RegExp(re, 'g'); let m;
+        while ((m = rx.exec(head))) found.add(m[1]);
+      }
+    }
+  }
+  walk(dir, 0);
+  return found;
+}
+
 function scanAdoption(projectDirs, kits, owner = 'Jeffrey0117') {
+  const kitNames = kits.map((k) => k.name);
   const rows = [];
   for (const dir of projectDirs) {
-    let pkg;
-    try { pkg = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf8')); } catch (e) { continue; }
-    const deps = Object.assign({}, pkg.dependencies, pkg.devDependencies, pkg.peerDependencies);
+    let deps = {};
+    try { const pkg = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf8')); deps = Object.assign({}, pkg.dependencies, pkg.devDependencies, pkg.peerDependencies); } catch (e) {}
     const blob = Object.entries(deps).map(([k, v]) => k + ' ' + v).join(' ');
-    const used = kits.filter((k) => deps[k.name] || blob.includes(`${owner}/${k.name}`)).map((k) => k.name);
-    rows.push({ project: path.basename(dir), used });
+    const self = path.basename(dir).toLowerCase();
+    const dep = kits.filter((k) => (deps[k.name] || blob.includes(`${owner}/${k.name}`)) && k.name.toLowerCase() !== self).map((k) => k.name);
+    const embedded = Array.from(detectEmbedded(dir, kitNames)).filter((n) => !dep.includes(n) && n.toLowerCase() !== self);
+    rows.push({ project: path.basename(dir), dep, embedded, used: dep.concat(embedded) });
   }
   return rows;
 }

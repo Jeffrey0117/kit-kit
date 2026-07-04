@@ -91,22 +91,28 @@ async function main() {
 
   if (cmd === 'map') {
     const base = rest.find((a) => !a.startsWith('--')) || require('path').resolve(__dirname, '..');
-    const dirs = forge.listProjectDirs(base);
+    const kitSet = new Set(reg.kits.map((k) => k.name.toLowerCase()));
+    const dirs = forge.listProjectDirs(base).filter((d) => !kitSet.has(require('path').basename(d).toLowerCase()));
     const rows = forge.scanAdoption(dirs, reg.kits, reg.owner);
     const adopted = rows.filter((r) => r.used.length);
     console.log(`\n📊 kit 採用地圖　（掃 ${dirs.length} 個專案 @ ${base}）\n`);
-    if (!adopted.length) console.log('  還沒有專案用 package.json 正式宣告採用任何 kit（內嵌 copy 不算）。');
-    adopted.forEach((r) => console.log(`  ${r.project.padEnd(22)} ${r.used.join(', ')}`));
+    if (!adopted.length) console.log('  還沒有專案採用任何 kit。');
+    adopted.forEach((r) => {
+      const parts = [];
+      if (r.dep.length) parts.push('dep: ' + r.dep.join(', '));
+      if (r.embedded.length) parts.push('內嵌: ' + r.embedded.join(', '));
+      console.log(`  ${r.project.padEnd(20)} ${parts.join('  |  ')}`);
+    });
     const counts = {};
     rows.forEach((r) => r.used.forEach((n) => { counts[n] = (counts[n] || 0) + 1; }));
     const ranked = Object.entries(counts).sort((a, b) => b[1] - a[1]);
     if (ranked.length) {
-      console.log('\n  每個 kit 被幾個專案採用：');
+      console.log('\n  每個 kit 被幾個專案採用（dep+內嵌）：');
       ranked.forEach(([n, c]) => console.log(`    ${n.padEnd(22)} ${c}`));
     }
     const zero = reg.kits.map((k) => k.name).filter((n) => !counts[n]);
-    if (zero.length) console.log(`\n  ⚠️ 還沒被任何專案採用（回套機會）：${zero.join(', ')}`);
-    console.log('\n  （只算 package.json 宣告的 dep；內嵌 copy 不計 → 正好鼓勵把內嵌轉成正式採用）\n');
+    if (zero.length) console.log(`\n  ⚠️ 還沒被採用（回套機會）：${zero.join(', ')}`);
+    console.log(`\n  總採用數：${Object.values(counts).reduce((a, b) => a + b, 0)}（dep + 內嵌 copy）\n`);
     return;
   }
 
