@@ -181,6 +181,23 @@
         "json",
         "官網"
       ]
+    },
+    {
+      "name": "retry-kit",
+      "type": "kit",
+      "covers": "指數退避重試 + 可重試錯誤判斷（fetch/任何 async）",
+      "repo": "https://github.com/Jeffrey0117/retry-kit",
+      "install": "npm i github:Jeffrey0117/retry-kit",
+      "keywords": [
+        "retry",
+        "backoff",
+        "fetch",
+        "重試",
+        "退避",
+        "resilience",
+        "逾時",
+        "timeout"
+      ]
     }
   ]
 }
