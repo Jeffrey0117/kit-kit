@@ -250,6 +250,24 @@
         "雙語",
         "翻譯"
       ]
+    },
+    {
+      "name": "ai-content-kit",
+      "type": "kit",
+      "covers": "LLM 內容產生器：文章(TOC/FAQ/schema)/銷售頁文案/DALL-E 封面，provider 可換(OpenAI 相容)",
+      "repo": "https://github.com/Jeffrey0117/ai-content-kit",
+      "install": "npm i github:Jeffrey0117/ai-content-kit",
+      "keywords": [
+        "ai",
+        "llm",
+        "content-generation",
+        "deepseek",
+        "openai",
+        "文章生成",
+        "銷售頁",
+        "封面圖",
+        "seo"
+      ]
     }
   ]
 }
