@@ -285,6 +285,27 @@
         "個人頁",
         "shadcn"
       ]
+    },
+    {
+      "name": "video-core-kit",
+      "type": "kit",
+      "covers": "headless 影片播放核心：HLS/DASH/MP4/YouTube 統一、engine 注入(零依賴)、預覽秒開無縫切、進度/畫質事件；UI 各框架套殼",
+      "repo": "https://github.com/Jeffrey0117/video-core-kit",
+      "install": "npm i github:Jeffrey0117/video-core-kit",
+      "keywords": [
+        "video",
+        "player",
+        "hls",
+        "dash",
+        "headless",
+        "shaka",
+        "hls.js",
+        "youtube",
+        "streaming",
+        "播放器",
+        "影片",
+        "無頭"
+      ]
     }
   ]
 }
