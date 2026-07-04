@@ -233,6 +233,23 @@
         "音效",
         "混響"
       ]
+    },
+    {
+      "name": "bilingual-subtitle-kit",
+      "type": "kit",
+      "covers": "雙語字幕：VTT 解析 + 漸進背景翻譯（並行+重試）+ Web Storage 快取，translate 後端可注入",
+      "repo": "https://github.com/Jeffrey0117/bilingual-subtitle-kit",
+      "install": "npm i github:Jeffrey0117/bilingual-subtitle-kit",
+      "keywords": [
+        "subtitle",
+        "vtt",
+        "translation",
+        "bilingual",
+        "captions",
+        "字幕",
+        "雙語",
+        "翻譯"
+      ]
     }
   ]
 }
