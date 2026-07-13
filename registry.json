@@ -360,6 +360,25 @@
         "客服",
         "訊息"
       ]
+    },
+    {
+      "name": "blocks-kit",
+      "covers": "元件收割機 — 跨專案 UI 區塊金庫：harvest 收割元件原始碼進金庫、add 播種到新專案（shadcn 慣例、零依賴 CLI）",
+      "repo": "https://github.com/Jeffrey0117/blocks-kit",
+      "install": "npx github:Jeffrey0117/blocks-kit add <name>",
+      "keywords": [
+        "ui",
+        "component",
+        "blocks",
+        "元件",
+        "區塊",
+        "收割",
+        "播種",
+        "版面",
+        "section",
+        "shadcn"
+      ],
+      "skill": true
     }
   ]
 }

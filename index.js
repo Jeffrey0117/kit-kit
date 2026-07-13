@@ -68,6 +68,7 @@ function scaffold(name, targetDir, meta = {}) {
     'index.js': tplIndex(name, desc),
     'example.js': tplExample(name),
     'README.md': tplReadme(name, desc),
+    'SKILL.md': tplSkill(name, desc),
     'package.json': tplPackage(name, desc, meta.author || 'Jeffrey0117'),
     'LICENSE': tplLicense(meta.author || 'Jeffrey0117'),
     '.gitignore': 'node_modules/\n*.log\n',
@@ -102,6 +103,20 @@ function pullKit(name, targetDir, owner = 'Jeffrey0117') {
     cp.execSync(`gh repo clone ${owner}/${name} "${dir}"`, { stdio: 'inherit' });
   }
   return dir;
+}
+
+// ── kit ↔ skill 綁定：抓 kit repo 裡的 SKILL.md（打法/文案/模式）──
+// kit 是能力（code），skill 是判斷（何時用、怎麼接、文案怎麼寫）。兩者同 repo 同版本演化。
+function fetchSkill(name, owner = 'Jeffrey0117') {
+  const get = (branch) => {
+    try {
+      return cp.execSync(
+        `curl -fsSL https://raw.githubusercontent.com/${owner}/${name}/${branch}/SKILL.md`,
+        { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }
+      );
+    } catch (e) { return null; }
+  };
+  return get('master') || get('main');
 }
 
 // ── 把新 kit 加進 registry ──
@@ -235,6 +250,35 @@ TODO
 MIT © Jeffrey0117
 `;
 }
+function tplSkill(name, desc) {
+  return `---
+name: ${name}
+description: <觸發語：使用者說「…」或要做 X 功能時。一句話講守備範圍，給 agent 判斷要不要載入>
+---
+
+# ${name} — 打法
+
+**${desc}**
+
+## 何時觸發
+
+<哪種需求/哪句話出現時直接套這個 kit，不要重造>
+
+## 接線（照抄能跑）
+
+1. \`npm i github:Jeffrey0117/${name}\`（或內嵌 copy）
+2. <真實 wiring 步驟 + 程式碼片段>
+
+## 模式與文案
+
+<這個領域打磨過的軟知識：元件組合順序、文案句型、定價/佈局原則…
+kit 的 code 解決「能不能」，這一節解決「該怎麼寫才對」>
+
+## 地雷
+
+<踩過的坑>
+`;
+}
 function tplPackage(name, desc, author) {
   return JSON.stringify({
     name, version: '0.1.0', description: desc, main: 'index.js',
@@ -269,5 +313,5 @@ SOFTWARE.
 module.exports = {
   loadRegistry, syncFromGitHub, checkOverlap, recommend,
   scaffold, publish, addToRegistry, pullKit, initProject,
-  listProjectDirs, scanAdoption,
+  listProjectDirs, scanAdoption, fetchSkill,
 };

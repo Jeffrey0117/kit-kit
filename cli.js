@@ -50,6 +50,7 @@ async function main() {
       console.log(`   → ${r.kit.name}  (${r.kit.covers})`);
       console.log(`   → ${r.kit.repo}   [${r.kit.install}]`);
       console.log(`   命中：${r.why.join(', ')}`);
+      if (r.kit.skill) console.log(`   📖 這顆有打法 → 先讀再接線：kit-kit skill ${r.kit.name}`);
     } else {
       console.log(`🆕 沒有現成 kit 涵蓋 → 建議「抽一個新 kit」：`);
       console.log(`   kit-kit new <name> --desc "..." --repo`);
@@ -79,13 +80,37 @@ async function main() {
       console.log('   建立 GitHub repo…');
       try {
         forge.publish(out.dir, name, desc || '');
-        forge.addToRegistry(null, { name, covers: desc || '', repo: `https://github.com/${reg.owner}/${name}`, install: `npm i github:${reg.owner}/${name}`, keywords: [] });
-        console.log(`   ✅ https://github.com/${reg.owner}/${name}（已加進 registry）`);
+        const entry = { name, covers: desc || '', repo: `https://github.com/${reg.owner}/${name}`, install: `npm i github:${reg.owner}/${name}`, keywords: [], skill: true };
+        // npx 跑的時候 __dirname 是快取、寫了會蒸發 → 拉真的 kit-kit repo 登錄再 push 回去
+        try {
+          const os = require('os');
+          const cp = require('child_process');
+          const kkDir = forge.pullKit('kit-kit', path.join(os.homedir(), '.kit-kit', 'kit-kit'), reg.owner);
+          forge.addToRegistry(path.join(kkDir, 'registry.json'), entry);
+          cp.execSync(`git commit -aqm "registry: + ${name}" && git push -q`, { cwd: kkDir, shell: true });
+          console.log(`   ✅ https://github.com/${reg.owner}/${name}（registry 已登錄並 push）`);
+        } catch (e2) {
+          forge.addToRegistry(null, entry);
+          console.log(`   ⚠️ registry push 失敗（${e2.message.split('\n')[0]}）— 只寫到本地副本，記得去 kit-kit repo 補登錄`);
+        }
       } catch (e) { console.error('   ✗ publish 失敗：', e.message); }
     } else {
       console.log('   （加 --repo 可連 GitHub 一起建）');
     }
-    console.log('   下一步：填 index.js 實作 + README wiring + example.js\n');
+    console.log('   下一步：填 index.js 實作 + README wiring + example.js + SKILL.md（打法/文案/模式）\n');
+    return;
+  }
+
+  if (cmd === 'skill') {
+    // kit ↔ skill 綁定：kit 是能力（code），SKILL.md 是打法（何時用/怎麼接/文案怎麼寫）
+    const name = rest.find((a) => !a.startsWith('--'));
+    if (!name) return console.error('用法: kit-kit skill <kit>');
+    const md = forge.fetchSkill(name, reg.owner);
+    if (!md) {
+      console.log(`\n（${name} 還沒有 SKILL.md — 幫它補：kit-kit update ${name} → 寫 SKILL.md → push，registry 該 kit 加 "skill": true）\n`);
+      return;
+    }
+    console.log('\n' + md.trim() + '\n');
     return;
   }
 
@@ -154,7 +179,8 @@ async function main() {
   console.log(`kit-kit 🍫 — 抽 kit 的 kit（kit²）
   kit-kit list                          列出現有 kit
   kit-kit check "描述/關鍵字"           有現成的就強化、沒有才抽
-  kit-kit new <name> [--desc] [--repo]  抽新 kit（scaffold；--repo 一起建 GitHub）
+  kit-kit skill <kit>                   讀該 kit 的打法（SKILL.md：何時用/怎麼接/文案）
+  kit-kit new <name> [--desc] [--repo]  抽新 kit（scaffold 含 SKILL.md；--repo 一起建 GitHub）
   kit-kit update <kit> [--dir path]     補/更新現有 kit（clone 下來改 → commit+push）
   kit-kit init <project> [--with a,b,c] 勾選 kit → 產一個已組好的專案骨架
   kit-kit map [baseDir]                 採用地圖：哪個專案用了哪些 kit + 誰還沒回套
