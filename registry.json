@@ -379,6 +379,27 @@
         "shadcn"
       ],
       "skill": true
+    },
+    {
+      "name": "paywall-kit",
+      "covers": "金流以外的整條變現 UX + gate 邏輯:createPaywall({tiers})、can/checkQuota/nextTier/pricing/compare、銷售型方案頁模板、免費上限 DB trigger。搭配 SKILL.md 的銷售頁文案句型庫",
+      "repo": "https://github.com/Jeffrey0117/paywall-kit",
+      "install": "npm i github:Jeffrey0117/paywall-kit",
+      "keywords": [
+        "paywall",
+        "付費牆",
+        "訂閱",
+        "方案",
+        "pricing",
+        "tier",
+        "銷售頁",
+        "文案",
+        "sales page",
+        "landing",
+        "變現",
+        "quota"
+      ],
+      "skill": true
     }
   ]
 }
