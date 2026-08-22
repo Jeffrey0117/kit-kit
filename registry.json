@@ -400,6 +400,14 @@
         "quota"
       ],
       "skill": true
+    },
+    {
+      "name": "chunked-upload-kit",
+      "covers": "Chunked/resumable file upload — zero-dep server store + fastify/express adapters + browser/Node client. Gets large files past proxies that cap request bodies (e.g. Cloudflare 100MB).",
+      "repo": "https://github.com/Jeffrey0117/chunked-upload-kit",
+      "install": "npm i github:Jeffrey0117/chunked-upload-kit",
+      "keywords": [],
+      "skill": true
     }
   ]
 }
