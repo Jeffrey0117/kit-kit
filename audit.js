@@ -16,8 +16,17 @@ const SHADOW_DIR = /\.(slot[A-Z]|shadow|husk|bak)|-bak\b|husk-bak|--bot\d+$/i
 const MAX_FILES = 4000
 const MAX_DEPTH = 7
 
+// 專案都放在哪個資料夾。npx 跑的時候 kit-kit 在下載快取裡,不能拿自己的位置推,
+// 依序看:環境變數 KIT_CODE_DIR → kit-kit 自己旁邊有 workhub(本機 clone)→ 家目錄的 Desktop/code
+function codeBase() {
+  if (process.env.KIT_CODE_DIR) return path.resolve(process.env.KIT_CODE_DIR)
+  const beside = path.resolve(__dirname, '..')
+  if (fs.existsSync(path.join(beside, 'workhub'))) return beside
+  return path.join(require('os').homedir(), 'Desktop', 'code')
+}
+
 function defaultRoots() {
-  const code = path.resolve(__dirname, '..')
+  const code = codeBase()
   return [code, path.join(code, 'workhub'), path.join(code, 'cloudpipe', 'projects')]
 }
 
@@ -129,7 +138,7 @@ function howUsed(project, kitName, owner) {
 // 用本機的 kit clone 比對;沒有 clone 或查不到那個 commit 時保守地當作有改。
 const NON_CODE = /(^|\/)(README|SKILL|AGENTS|CHANGELOG|LICENSE)[^/]*$|\.md$|^test\/|^docs\/|^kit-checks\.json$|^example\.js$/i
 function codeChangedSince(kitName, pinned) {
-  const clone = path.join(path.resolve(__dirname, '..'), kitName)
+  const clone = path.join(codeBase(), kitName)
   try {
     const files = execFileSync('git', ['-C', clone, 'diff', '--name-only', `${pinned}..origin/HEAD`], {
       encoding: 'utf8',
@@ -160,7 +169,7 @@ function kitHead(kitName, owner) {
 
 // 規則清單:優先讀本機的 kit clone(剛改完還沒推也看得到),沒有再抓 GitHub
 async function loadChecks(kitName, owner) {
-  const local = readJson(path.join(path.resolve(__dirname, '..'), kitName, 'kit-checks.json'))
+  const local = readJson(path.join(codeBase(), kitName, 'kit-checks.json'))
   if (local) return local.checks || []
   try {
     const res = await fetch(`https://raw.githubusercontent.com/${owner}/${kitName}/HEAD/kit-checks.json`, { signal: AbortSignal.timeout(15000) })
@@ -221,7 +230,7 @@ function formatReport(result) {
     if (row.how.includes('vendored') || row.how.includes('embedded')) flags.push('複製版,kit 更新不會自動帶到')
     if (row.violations.length) flags.push(`違反 ${row.violations.length} 條規則`)
     // 同名專案可能有好幾份實體拷貝(code\、workhub\、cloudpipe\projects\),印出位置才分得清
-    const where = path.relative(path.resolve(__dirname, '..'), row.dir).split(path.sep).join('/')
+    const where = path.relative(codeBase(), row.dir).split(path.sep).join('/')
     lines.push('', `${flags.length ? '⚠️' : '✅'} ${where}  (${row.how.map((h) => label[h] || h).join('+')})${flags.length ? '  ' + flags.join(' / ') : ''}`)
     for (const v of row.violations) {
       lines.push(`   • ${v.rule}`)
