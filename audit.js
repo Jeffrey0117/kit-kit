@@ -125,6 +125,26 @@ function howUsed(project, kitName, owner) {
   return how
 }
 
+// 鎖住的版本之後,kit 有沒有改到「程式」?只改文件、測試、檢查清單的不算落後。
+// 用本機的 kit clone 比對;沒有 clone 或查不到那個 commit 時保守地當作有改。
+const NON_CODE = /(^|\/)(README|SKILL|AGENTS|CHANGELOG|LICENSE)[^/]*$|\.md$|^test\/|^docs\/|^kit-checks\.json$|^example\.js$/i
+function codeChangedSince(kitName, pinned) {
+  const clone = path.join(path.resolve(__dirname, '..'), kitName)
+  try {
+    const files = execFileSync('git', ['-C', clone, 'diff', '--name-only', `${pinned}..origin/HEAD`], {
+      encoding: 'utf8',
+      timeout: 15000,
+      windowsHide: true,
+      stdio: ['ignore', 'pipe', 'ignore']
+    })
+      .split(/\r?\n/)
+      .filter(Boolean)
+    return files.some((file) => !NON_CODE.test(file))
+  } catch {
+    return true
+  }
+}
+
 function kitHead(kitName, owner) {
   try {
     const out = execFileSync('git', ['ls-remote', `https://github.com/${owner}/${kitName}.git`, 'HEAD'], {
@@ -185,7 +205,8 @@ async function auditKit(kitName, { owner = 'Jeffrey0117', roots, kitNames = [] }
     const how = howUsed(project, kitName, owner)
     if (!how.length) continue
     const pinned = how.includes('dep') ? pinnedCommit(project.dir, kitName) : null
-    const outdated = Boolean(head && pinned && !head.startsWith(pinned) && !pinned.startsWith(head.slice(0, pinned.length)))
+    const differs = Boolean(head && pinned && !head.startsWith(pinned) && !pinned.startsWith(head.slice(0, pinned.length)))
+    const outdated = differs && codeChangedSince(kitName, pinned)
     rows.push({ project: project.name, dir: project.dir, how, pinned, outdated, violations: runChecks(project.dir, checks, [kitName]) })
   }
   return { kit: kitName, head, checks: checks.length, rows }
