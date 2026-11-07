@@ -19,6 +19,9 @@ Jeff 維護一套零依賴可複用 kit（funnel-kit / media-gate / auth-kit / r
    - **補充**：該 kit 缺一塊、屬於它範疇 → 加進那個 kit。
 4. **沒有 kit 涵蓋 → 抽新的**：`npx github:Jeffrey0117/kit-kit new <name> --desc "…" --repo`，然後填 `index.js`（app-specific 用 opts 注入）、README（真實 wiring）、`example.js`（能 `node example.js` 跑）、**`SKILL.md`（打法：何時觸發/接線/模式與文案/地雷）**。
 
+5. **改完 kit、推上去之後:跑稽核,看誰受影響**:`npx github:Jeffrey0117/kit-kit audit <kit>`(或 `--all`)。它會掃全部專案位置(code\、workhub\、cloudpipe\projects\),列出用到這個 kit 的專案(裝套件 / 整包複製 / 程式複製),標出版本落後、複製版沒同步、違反規則的地方(附檔案與行號)。只讀、不改、不花錢。CloudPipe 每天 09:40 也會自動跑一次,有變化才發 Telegram。
+6. **規則要能自動檢查**:kit 的規則除了寫進 SKILL.md,能用搜尋判斷的就同時寫進 kit repo 根目錄的 `kit-checks.json`(`{checks:[{id, rule, fix, pattern, files}]}`,pattern 找到就算違反、files 限定掃描範圍)。寫完先對現有專案跑一次 audit,把誤判調掉再推。
+
 ## 鐵則
 - **kit ↔ skill 高度綁定**：每個 kit repo 自帶 SKILL.md，code 與打法同版本演化 — 改 kit 順手改 SKILL.md。抽出「銷售頁元件＋文案寫法」這種東西時，元件進 kit、寫法進 SKILL.md，下次直接套。
 - 一個 kit 一個單一職責（高內聚）。付費牆＋訂閱＋金流那種綁死 app 的，做成「模板 repo」而不是通用 kit。

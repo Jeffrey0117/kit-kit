@@ -3,6 +3,7 @@
 //   kit-kit list                          列出現有 kit（registry + 選用 gh 即時撈）
 //   kit-kit check "使用者登入 密碼"        查有沒有現成 kit 能用（有→強化，沒有→抽）
 //   kit-kit new <name> [--desc "..."] [--repo]   抽新 kit（scaffold；--repo 連 GitHub 一起建）
+//   kit-kit audit <kit>|--all [--json]   kit 更新後檢查所有用到它的專案(版本落後、違反 kit-checks.json)
 const path = require('path');
 const forge = require('./index');
 
@@ -112,6 +113,26 @@ async function main() {
     }
     console.log('\n' + md.trim() + '\n');
     return;
+  }
+
+  // kit-kit audit <kit>|--all [--json]  kit 更新後:找出用到它的專案,檢查版本落後與違反 kit 規則(kit-checks.json)
+  if (cmd === 'audit') {
+    const audit = require('./audit')
+    const kitNames = reg.kits.map((k) => k.name)
+    const target = rest.find((a) => !a.startsWith('--'))
+    // 只檢查程式型的 kit;service/template 是服務或範本,不會被「複製進專案」
+    const codeKits = reg.kits.filter((k) => !['service', 'template'].includes(k.type)).map((k) => k.name)
+    const names = flag('all') ? codeKits : target ? [target] : []
+    if (!names.length) return console.error('用法: kit-kit audit <kit> | --all [--json]')
+    const results = []
+    for (const name of names) {
+      const result = await audit.auditKit(name, { owner: reg.owner, kitNames })
+      if (result.rows.length) results.push(result)
+    }
+    if (flag('json')) return console.log(JSON.stringify(results, null, 2))
+    if (!results.length) return console.log('沒有專案用到這些 kit。')
+    console.log('\n' + results.map(audit.formatReport).join('\n\n') + '\n')
+    return
   }
 
   if (cmd === 'map') {

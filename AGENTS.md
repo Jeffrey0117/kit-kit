@@ -18,6 +18,8 @@
    - `example.js` 要能 `node example.js` 跑起來。
    - 加關鍵字進 registry（`--repo` 會自動加）。
 
+4. **kit 改完推上去 → `kit-kit audit <kit>`** 看哪些專案受影響(版本落後、複製版沒同步、違反 `kit-checks.json` 的規則)。規則能自動檢查的就寫進 kit 的 `kit-checks.json`。
+
 ## 鐵則
 - **一個 kit 一個單一職責**（高內聚）。付費牆＋訂閱＋金流那種綁死 app 的別硬抽成通用 kit — 那種做成「模板 repo」。
 - **零依賴優先**（node 內建）。要第三方就在 README 講清楚。

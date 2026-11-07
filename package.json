@@ -7,6 +7,7 @@
     "kit-kit": "cli.js"
   },
   "scripts": {
+    "test": "node --test",
     "list": "node cli.js list"
   },
   "keywords": ["kit", "scaffold", "monorepo", "codegen", "registry", "meta", "zero-dependency"],
