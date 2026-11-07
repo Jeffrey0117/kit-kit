@@ -424,6 +424,14 @@
       "install": "npm i github:Jeffrey0117/family-kit",
       "keywords": [],
       "skill": true
+    },
+    {
+      "name": "jwks-verify-kit",
+      "covers": "驗外部 IdP 的非對稱 JWT（ES256/384/512）+ JWKS 公鑰快取，零依賴 fail-closed",
+      "repo": "https://github.com/Jeffrey0117/jwks-verify-kit",
+      "install": "npm i github:Jeffrey0117/jwks-verify-kit",
+      "keywords": [],
+      "skill": true
     }
   ]
 }
