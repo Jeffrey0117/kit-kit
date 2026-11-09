@@ -148,9 +148,40 @@ function codeChangedSince(kitName, pinned) {
     })
       .split(/\r?\n/)
       .filter(Boolean)
-    return files.some((file) => !NON_CODE.test(file))
+    const changed = files.filter((file) => !NON_CODE.test(file))
+    if (!changed.length) return false
+    // 釘版本的慣例:每次發版都會 bump package.json 的 version。那不是程式改動,
+    // 否則所有釘在 tag 的專案會永遠亮「落後」,真的漂移就被噪音蓋掉。
+    if (changed.length === 1 && changed[0] === 'package.json') {
+      return !onlyVersionBumped(clone, pinned)
+    }
+    return true
   } catch {
     return true
+  }
+}
+
+// package.json 這次只動了 version 嗎?動到 dependencies / exports / files 等任何
+// 其他欄位就算程式改動。讀不到或解析不了就回 false(保守地當作有改)。
+function onlyVersionBumped(clone, pinned) {
+  const read = (ref) => {
+    const out = execFileSync('git', ['-C', clone, 'show', `${ref}:package.json`], {
+      encoding: 'utf8',
+      timeout: 15000,
+      windowsHide: true,
+      stdio: ['ignore', 'pipe', 'ignore']
+    })
+    return JSON.parse(out)
+  }
+  try {
+    const before = read(pinned)
+    const after = read('origin/HEAD')
+    delete before.version
+    delete after.version
+    const keys = [...new Set([...Object.keys(before), ...Object.keys(after)])].sort()
+    return keys.every((k) => JSON.stringify(before[k]) === JSON.stringify(after[k]))
+  } catch {
+    return false
   }
 }
 
@@ -245,4 +276,4 @@ function needsAttention(result) {
   return result.rows.some((r) => r.outdated || r.violations.length || !r.how.includes('dep'))
 }
 
-module.exports = { defaultRoots, listAllProjects, howUsed, pinnedCommit, kitHead, loadChecks, runChecks, auditKit, formatReport, needsAttention }
+module.exports = { codeChangedSince, defaultRoots, listAllProjects, howUsed, pinnedCommit, kitHead, loadChecks, runChecks, auditKit, formatReport, needsAttention }
