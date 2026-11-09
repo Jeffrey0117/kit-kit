@@ -118,7 +118,6 @@ async function main() {
   // kit-kit audit <kit>|--all [--json]  kit 更新後:找出用到它的專案,檢查版本落後與違反 kit 規則(kit-checks.json)
   if (cmd === 'audit') {
     const audit = require('./audit')
-    const kitNames = reg.kits.map((k) => k.name)
     const target = rest.find((a) => !a.startsWith('--'))
     // 只檢查程式型的 kit;service/template 是服務或範本,不會被「複製進專案」
     const codeKits = reg.kits.filter((k) => !['service', 'template'].includes(k.type)).map((k) => k.name)
@@ -126,7 +125,7 @@ async function main() {
     if (!names.length) return console.error('用法: kit-kit audit <kit> | --all [--json]')
     const results = []
     for (const name of names) {
-      const result = await audit.auditKit(name, { owner: reg.owner, kitNames })
+      const result = await audit.auditKit(name, { owner: reg.owner })
       if (result.rows.length) results.push(result)
     }
     if (flag('json')) return console.log(JSON.stringify(results, null, 2))

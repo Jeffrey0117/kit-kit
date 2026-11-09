@@ -30,9 +30,11 @@ function defaultRoots() {
   return [code, path.join(code, 'workhub'), path.join(code, 'cloudpipe', 'projects')]
 }
 
-// 全部專案(有 package.json 的資料夾),同一個實體目錄只算一次
-function listAllProjects(roots = defaultRoots(), kitNames = []) {
-  const kitSet = new Set(kitNames.map((n) => n.toLowerCase()))
+// 全部專案(有 package.json 的資料夾),同一個實體目錄只算一次。
+// excludeNames 只放「被稽核的那個 kit 自己」—— 不要放整個 registry,
+// registry 裡有些條目是產品(Pokkit / PayGate / LaunchKit),它們是真實消費端。
+function listAllProjects(roots = defaultRoots(), excludeNames = []) {
+  const kitSet = new Set(excludeNames.map((n) => n.toLowerCase()))
   const seen = new Set()
   const out = []
   for (const root of roots) {
@@ -237,11 +239,14 @@ function runChecks(dir, checks, skip = []) {
     .map(({ id, rule, fix, severity, hits }) => ({ id, rule, fix, severity: severity || 'warn', hits }))
 }
 
-async function auditKit(kitName, { owner = 'Jeffrey0117', roots, kitNames = [] } = {}) {
+// 排除名單只能是「正在稽核的這個 kit 自己」。
+// 把整個 registry 當排除名單會讓 registry 裡那些其實是「產品」的條目
+// (Pokkit / PayGate / LaunchKit)對每一次稽核都隱形 —— 它們同時是真實消費端。
+async function auditKit(kitName, { owner = 'Jeffrey0117', roots } = {}) {
   const head = kitHead(kitName, owner)
   const checks = await loadChecks(kitName, owner)
   const rows = []
-  for (const project of listAllProjects(roots, kitNames)) {
+  for (const project of listAllProjects(roots, [kitName])) {
     const how = howUsed(project, kitName, owner)
     if (!how.length) continue
     const pinned = how.includes('dep') ? pinnedCommit(project.dir, kitName) : null
