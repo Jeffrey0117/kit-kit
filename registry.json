@@ -432,6 +432,26 @@
       "install": "npm i github:Jeffrey0117/jwks-verify-kit",
       "keywords": [],
       "skill": true
+    },
+    {
+      "name": "subtitle-overlay-kit",
+      "covers": "字幕疊加層的純邏輯：長 cue 切成讀得完的片段、難字底線跟著片段重新對位、框的錨邊/位移/寬度/四角等比縮放，零依賴不碰 DOM",
+      "repo": "https://github.com/Jeffrey0117/subtitle-overlay-kit",
+      "install": "npm i github:Jeffrey0117/subtitle-overlay-kit",
+      "keywords": [
+        "subtitle",
+        "caption",
+        "overlay",
+        "cue",
+        "chunking",
+        "bilingual",
+        "drag",
+        "resize",
+        "字幕",
+        "疊加",
+        "切片"
+      ],
+      "skill": true
     }
   ]
 }
