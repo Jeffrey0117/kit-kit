@@ -63,6 +63,26 @@ function listAllProjects(roots = defaultRoots(), excludeNames = []) {
   return out
 }
 
+// project 底下有哪些「本身也被列成專案」的子目錄?回傳相對路徑前綴。
+function realOf(dir) {
+  try {
+    return fs.realpathSync.native(dir)
+  } catch {
+    return path.resolve(dir)
+  }
+}
+function nestedProjectDirs(project, projects) {
+  const base = realOf(project.dir)
+  const out = []
+  for (const other of projects) {
+    const real = realOf(other.dir)
+    if (real === base) continue
+    const rel = path.relative(base, real).split(path.sep).join('/')
+    if (rel && !rel.startsWith('..') && !path.isAbsolute(rel)) out.push(rel)
+  }
+  return out
+}
+
 function walkSources(dir, onFile) {
   let count = 0
   function walk(d, depth) {
@@ -111,8 +131,14 @@ function pinnedCommit(dir, kitName) {
   return null
 }
 
+// 光是提到 kit 的名字不代表複製 —— 檔頭寫「別用我、那個情境請用 X」的指路註解
+// 最常見(auth-kit 就是這樣被誤判成 jwks-verify-kit 的複製版,還連帶命中 HS256
+// 那條規則)。所以要求同一行還帶著「這是抄來的」訊號:來源字樣或版本號。
+const COPY_HINT = /copied|copy|vendor|fork|based on|\bfrom\b|複製|抄|抽自|同步自|來自|source\s*[:：]|\bv\d+(?:\.\d+)*/i
+
 // 這個專案怎麼用到這個 kit:裝套件 / 檔頭註明是從 kit 複製來的 / 整包 kit 資料夾放在專案裡
-function howUsed(project, kitName, owner) {
+// skip:相對路徑前綴,用來跳過「本身就是獨立受稽核專案」的子目錄(見 auditKit)
+function howUsed(project, kitName, owner, skip = []) {
   const how = []
   const pkg = readJson(path.join(project.dir, 'package.json')) || {}
   const deps = { ...pkg.dependencies, ...pkg.devDependencies, ...pkg.peerDependencies }
@@ -121,12 +147,15 @@ function howUsed(project, kitName, owner) {
   const vendored = path.join(project.dir, kitName, 'package.json')
   if ((readJson(vendored) || {}).name === kitName) how.push('vendored')
   if (!how.length) {
-    const marker = new RegExp(`(?://|\\*|#|<!--).{0,80}\\b${kitName.replace(/-/g, '\\-')}\\b`)
+    const mention = new RegExp(`(?://|\\*|#|<!--).{0,80}\\b${kitName.replace(/-/g, '\\-')}\\b`)
     let found = false
     walkSources(project.dir, (file) => {
       if (found) return
+      const rel = path.relative(project.dir, file).split(path.sep).join('/')
+      if (skip.some((prefix) => rel.startsWith(prefix + '/'))) return
       try {
-        if (marker.test(fs.readFileSync(file, 'utf8').slice(0, 600))) found = true
+        const head = fs.readFileSync(file, 'utf8').slice(0, 600)
+        if (head.split(/\r?\n/).some((line) => mention.test(line) && COPY_HINT.test(line))) found = true
       } catch {
         /* 讀不到就略過 */
       }
@@ -246,13 +275,19 @@ async function auditKit(kitName, { owner = 'Jeffrey0117', roots } = {}) {
   const head = kitHead(kitName, owner)
   const checks = await loadChecks(kitName, owner)
   const rows = []
-  for (const project of listAllProjects(roots, [kitName])) {
-    const how = howUsed(project, kitName, owner)
+  const projects = listAllProjects(roots, [kitName])
+  for (const project of projects) {
+    // 有些專案的真身就在另一個專案底下(plottr 在 cloudpipe/projects/ 裡,是真目錄
+    // 不是連結)。那份碼屬於子專案,它自己那一列就會被稽核 —— 不要再算給母專案一次,
+    // 否則同一份碼算兩次,母專案還會被誤報成複製版。
+    // monorepo 的子套件不受影響:它們沒有被單獨列成專案,照舊算母專案的碼。
+    const skip = [kitName, ...nestedProjectDirs(project, projects)]
+    const how = howUsed(project, kitName, owner, skip)
     if (!how.length) continue
     const pinned = how.includes('dep') ? pinnedCommit(project.dir, kitName) : null
     const differs = Boolean(head && pinned && !head.startsWith(pinned) && !pinned.startsWith(head.slice(0, pinned.length)))
     const outdated = differs && codeChangedSince(kitName, pinned)
-    rows.push({ project: project.name, dir: project.dir, how, pinned, outdated, violations: runChecks(project.dir, checks, [kitName]) })
+    rows.push({ project: project.name, dir: project.dir, how, pinned, outdated, violations: runChecks(project.dir, checks, skip) })
   }
   return { kit: kitName, head, checks: checks.length, rows }
 }
