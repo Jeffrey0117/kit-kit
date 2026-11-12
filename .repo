@@ -1,0 +1,10 @@
+{
+  "repo": 1,
+  "name": "kit-kit",
+  "what": "抽 kit 的 kit — 維護一套個人 kit 生態系：查現有 kit（有就強化/整合、沒有才抽新），統一 scaffold + 一鍵建 GitHub repo。零依賴。",
+  "kind": "tool",
+  "work": {
+    "guide": "AGENTS.md",
+    "test": "npm test"
+  }
+}
