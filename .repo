@@ -6,5 +6,61 @@
   "work": {
     "guide": "AGENTS.md",
     "test": "npm test"
-  }
+  },
+  "offers": [
+    {
+      "id": "list",
+      "what": "列出 registry 裡現有的 kit（名稱、涵蓋範圍、repo），有 gh 的話順便撈 GitHub 上還沒登錄的。想知道生態系有哪些 kit 時跑。",
+      "how": "cli",
+      "cli": "npx github:Jeffrey0117/kit-kit list"
+    },
+    {
+      "id": "check",
+      "what": "用描述或關鍵字比對現有 kit 的涵蓋度，回答 reuse（已有，去強化/補充/整合）或 extract（該抽新的）。做橫切關注點（登入、金流、限流、上傳…）之前先跑，別重造。",
+      "how": "cli",
+      "cli": "npx github:Jeffrey0117/kit-kit check \"<描述/關鍵字>\""
+    },
+    {
+      "id": "read_skill",
+      "what": "印出指定 kit 的 SKILL.md（何時用、怎麼接、文案與地雷）。check 查到 kit 之後、接線之前先讀；該 kit 還沒有 SKILL.md 就順手補一個。",
+      "how": "cli",
+      "cli": "npx github:Jeffrey0117/kit-kit skill <kit>"
+    },
+    {
+      "id": "new",
+      "what": "scaffold 一個新 kit 的標準骨架（index.js、README、example.js、SKILL.md…），--repo 連 GitHub public repo 一起建並登錄進 registry。check 確定沒有現成 kit 涵蓋時才用；名稱或描述與現有 kit 重疊會擋下，要照樣建加 --force。",
+      "how": "cli",
+      "cli": "npx github:Jeffrey0117/kit-kit new <name> [--desc \"<描述>\"] [--dir <path>] [--repo] [--force]"
+    },
+    {
+      "id": "update",
+      "what": "把現有 kit clone 下來準備補強：改完自己 commit + push 回上游。本專案的做法比 kit 更強、或 kit 缺東西時用。",
+      "how": "cli",
+      "cli": "npx github:Jeffrey0117/kit-kit update <kit> [--dir <path>]"
+    },
+    {
+      "id": "audit",
+      "what": "kit 改完推上去之後，列出所有用到它的專案，標出版本落後、複製版沒同步、違反 kit-checks.json 規則的檔案與行號。只讀不改；每次改完 kit 都要跑一次。",
+      "how": "cli",
+      "cli": "npx github:Jeffrey0117/kit-kit audit <kit>|--all [--json]"
+    },
+    {
+      "id": "init",
+      "what": "勾選 kit（或用 --with 指定）→ 產一個已組好依賴的專案骨架，附 KITS.md 接線說明。開新專案想直接帶上現有 kit 時用。",
+      "how": "cli",
+      "cli": "npx github:Jeffrey0117/kit-kit init <project> [--with a,b,c] [--dir <path>]"
+    },
+    {
+      "id": "lib",
+      "what": "當 lib 用：loadRegistry() 讀 kit 清單，recommend(查詢, kits) 回 { action: reuse|extract, kit, ranked }，scaffold(name, dir, { description }) 產骨架，另有 fetchSkill、pullKit、scanAdoption 等。要在自己的腳本裡查 kit 涵蓋度或產骨架時用。",
+      "how": "import",
+      "import": "const forge = require('kit-kit')"
+    },
+    {
+      "id": "skill",
+      "what": "給 agent 的決策流程。聞到「這塊跨專案通用」（驗證、金流、分析、限流、存取防護、上傳、快取、通知、排程…）或被要求抽 kit / 更新 kit 時載入：先 check，有就強化/整合，沒有才 new。",
+      "how": "skill",
+      "skill": "kit-kit"
+    }
+  ]
 }
