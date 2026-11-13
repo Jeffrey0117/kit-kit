@@ -452,6 +452,14 @@
         "切片"
       ],
       "skill": true
+    },
+    {
+      "name": "autopost-kit",
+      "covers": "Scheduled publishing queue: time slots, relative delays, no double-send, manual requeue, pause and auto-pause on repeated failure. Storage and the publish function are injected.",
+      "repo": "https://github.com/Jeffrey0117/autopost-kit",
+      "install": "npm i github:Jeffrey0117/autopost-kit",
+      "keywords": [],
+      "skill": true
     }
   ]
 }
