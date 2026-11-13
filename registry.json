@@ -460,6 +460,26 @@
       "install": "npm i github:Jeffrey0117/autopost-kit",
       "keywords": [],
       "skill": true
+    },
+    {
+      "name": "electron-slim-kit",
+      "covers": "Find and remove production dependencies an Electron installer ships for nothing (renderer-only packages already bundled by vite/esbuild): audit, fix, verify the packed asar. Zero-dependency CLI.",
+      "repo": "https://github.com/Jeffrey0117/electron-slim-kit",
+      "install": "npx github:Jeffrey0117/electron-slim-kit audit .",
+      "keywords": [
+        "electron",
+        "electron-builder",
+        "asar",
+        "installer size",
+        "bundle size",
+        "node_modules",
+        "dependencies",
+        "devDependencies",
+        "安裝檔",
+        "瘦身",
+        "打包"
+      ],
+      "skill": true
     }
   ]
 }
