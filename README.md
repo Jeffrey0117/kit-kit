@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="logo.svg" width="96" height="96" alt="kit-kit logo">
+</p>
+
 # kit-kit 🍫
 
 **抽 kit 的 kit（kit²）。** 維護一套個人 kit 生態系 —— 別的專案跑它，它**熟知現有有哪些 kit**：
