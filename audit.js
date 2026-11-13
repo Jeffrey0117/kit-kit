@@ -4,7 +4,8 @@
 //   { "checks": [ { "id", "rule", "fix", "pattern", "files", "severity" } ] }
 //   pattern = 找到就算違反的正規表示式;files = 只掃路徑符合這個正規表示式的檔案
 //
-// 只讀不改:不切分支、不動任何專案的檔案,不呼叫任何付費服務。
+// 只讀不改:不切分支、不動任何專案的檔案(也不替本機的 kit clone fetch),不呼叫任何付費服務。
+// 唯一會寫的地方是自己的快取 ~/.kit-kit/cache(比對版本用的 bare repo,刪掉會自己重建)。
 const fs = require('fs')
 const path = require('path')
 const { execFileSync } = require('child_process')
@@ -165,18 +166,52 @@ function howUsed(project, kitName, owner, skip = []) {
   return how
 }
 
-// 鎖住的版本之後,kit 有沒有改到「程式」?只改文件、測試、檢查清單的不算落後。
-// 用本機的 kit clone 比對;沒有 clone 或查不到那個 commit 時保守地當作有改。
-const NON_CODE = /(^|\/)(README|SKILL|AGENTS|CHANGELOG|LICENSE)[^/]*$|\.md$|^test\/|^docs\/|^kit-checks\.json$|^example\.js$/i
-function codeChangedSince(kitName, pinned) {
-  const clone = path.join(codeBase(), kitName)
+function git(args, timeout = 15000) {
+  return execFileSync('git', args, { encoding: 'utf8', timeout, windowsHide: true, stdio: ['ignore', 'pipe', 'ignore'] })
+}
+
+function hasCommit(repo, sha) {
   try {
-    const files = execFileSync('git', ['-C', clone, 'diff', '--name-only', `${pinned}..origin/HEAD`], {
-      encoding: 'utf8',
-      timeout: 15000,
-      windowsHide: true,
-      stdio: ['ignore', 'pipe', 'ignore']
-    })
+    git(['-C', repo, 'cat-file', '-e', `${sha}^{commit}`])
+    return true
+  } catch {
+    return false
+  }
+}
+
+// 找一份「這幾個 commit 都在裡面」的 kit repo 來比對。
+// 先看本機的 clone —— 只讀,不替它 fetch(那是使用者的工作目錄)。
+// 本機沒有 clone、或 clone 太舊,就用 kit-kit 自己的快取(~/.kit-kit/cache,
+// bare、不抓檔案內容),缺 commit 時更新快取。都拿不到就回 null。
+function repoWithCommits(kitName, owner, shas, { clone, cacheDir, remote } = {}) {
+  const local = clone || path.join(codeBase(), kitName)
+  const complete = (repo) => shas.every((sha) => hasCommit(repo, sha))
+  if (complete(local)) return local
+  const cache = path.join(cacheDir || path.join(require('os').homedir(), '.kit-kit', 'cache'), `${kitName}.git`)
+  const url = remote || `https://github.com/${owner}/${kitName}.git`
+  try {
+    if (!fs.existsSync(cache)) {
+      fs.mkdirSync(path.dirname(cache), { recursive: true })
+      git(['clone', '--bare', '--filter=blob:none', '--quiet', url, cache], 60000)
+    } else if (!complete(cache)) {
+      git(['-C', cache, 'fetch', '--quiet', url, '+refs/heads/*:refs/heads/*'], 60000)
+    }
+  } catch {
+    return null
+  }
+  return complete(cache) ? cache : null
+}
+
+// 鎖住的版本之後,kit 有沒有改到「程式」?只改文件、測試、檢查清單、logo、.repo 自述檔的不算落後。
+// head 是遠端現在的 commit(auditKit 用 ls-remote 拿到的);沒給就退回比本機 clone 的 origin/HEAD。
+// 拿不到可以比對的 repo、或查不到那個 commit 時,保守地當作有改。
+const NON_CODE = /(^|\/)(README|SKILL|AGENTS|CHANGELOG|LICENSE)[^/]*$|\.md$|^test\/|^docs\/|^kit-checks\.json$|^example\.js$|^logo\.(svg|png)$|^\.repo$/i
+function codeChangedSince(kitName, pinned, { head, owner = 'Jeffrey0117', ...where } = {}) {
+  const repo = head ? repoWithCommits(kitName, owner, [pinned, head], where) : where.clone || path.join(codeBase(), kitName)
+  if (!repo) return true
+  const target = head || 'origin/HEAD'
+  try {
+    const files = git(['-C', repo, 'diff', '--name-only', `${pinned}..${target}`])
       .split(/\r?\n/)
       .filter(Boolean)
     const changed = files.filter((file) => !NON_CODE.test(file))
@@ -184,7 +219,7 @@ function codeChangedSince(kitName, pinned) {
     // 釘版本的慣例:每次發版都會 bump package.json 的 version。那不是程式改動,
     // 否則所有釘在 tag 的專案會永遠亮「落後」,真的漂移就被噪音蓋掉。
     if (changed.length === 1 && changed[0] === 'package.json') {
-      return !onlyVersionBumped(clone, pinned)
+      return !onlyVersionBumped(repo, pinned, target)
     }
     return true
   } catch {
@@ -194,19 +229,11 @@ function codeChangedSince(kitName, pinned) {
 
 // package.json 這次只動了 version 嗎?動到 dependencies / exports / files 等任何
 // 其他欄位就算程式改動。讀不到或解析不了就回 false(保守地當作有改)。
-function onlyVersionBumped(clone, pinned) {
-  const read = (ref) => {
-    const out = execFileSync('git', ['-C', clone, 'show', `${ref}:package.json`], {
-      encoding: 'utf8',
-      timeout: 15000,
-      windowsHide: true,
-      stdio: ['ignore', 'pipe', 'ignore']
-    })
-    return JSON.parse(out)
-  }
+function onlyVersionBumped(clone, pinned, target = 'origin/HEAD') {
+  const read = (ref) => JSON.parse(git(['-C', clone, 'show', `${ref}:package.json`]))
   try {
     const before = read(pinned)
-    const after = read('origin/HEAD')
+    const after = read(target)
     delete before.version
     delete after.version
     const keys = [...new Set([...Object.keys(before), ...Object.keys(after)])].sort()
@@ -286,7 +313,7 @@ async function auditKit(kitName, { owner = 'Jeffrey0117', roots } = {}) {
     if (!how.length) continue
     const pinned = how.includes('dep') ? pinnedCommit(project.dir, kitName) : null
     const differs = Boolean(head && pinned && !head.startsWith(pinned) && !pinned.startsWith(head.slice(0, pinned.length)))
-    const outdated = differs && codeChangedSince(kitName, pinned)
+    const outdated = differs && codeChangedSince(kitName, pinned, { head, owner })
     rows.push({ project: project.name, dir: project.dir, how, pinned, outdated, violations: runChecks(project.dir, checks, skip) })
   }
   return { kit: kitName, head, checks: checks.length, rows }
