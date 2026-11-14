@@ -497,6 +497,14 @@
       "install": "npm i github:Jeffrey0117/whisper-kit",
       "keywords": [],
       "skill": true
+    },
+    {
+      "name": "schema-map-kit",
+      "covers": "資料庫結構地圖:從 Supabase/PostgREST 或 SQLite 產出「表名 + 欄位: 型別」文字清單、抽樣 json key 與狀態值、包成可搜尋的單頁網頁。零依賴 CLI,附資料設計守則。",
+      "repo": "https://github.com/Jeffrey0117/schema-map-kit",
+      "install": "npm i github:Jeffrey0117/schema-map-kit",
+      "keywords": [],
+      "skill": true
     }
   ]
 }
