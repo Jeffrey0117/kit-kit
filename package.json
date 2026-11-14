@@ -8,9 +8,18 @@
   },
   "scripts": {
     "test": "node --test",
-    "list": "node cli.js list"
+    "list": "node cli.js list",
+    "site": "node site/build.js"
   },
-  "keywords": ["kit", "scaffold", "monorepo", "codegen", "registry", "meta", "zero-dependency"],
+  "keywords": [
+    "kit",
+    "scaffold",
+    "monorepo",
+    "codegen",
+    "registry",
+    "meta",
+    "zero-dependency"
+  ],
   "author": "Jeffrey0117",
   "license": "MIT"
 }
