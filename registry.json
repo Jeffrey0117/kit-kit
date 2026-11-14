@@ -59,7 +59,8 @@
         "驗證",
         "密碼",
         "會員"
-      ]
+      ],
+      "skill": true
     },
     {
       "name": "ratelimit-kit",
@@ -95,7 +96,9 @@
         "react",
         "tailwind",
         "教學"
-      ]
+      ],
+      "private": true,
+      "skill": true
     },
     {
       "name": "payuni-embed-kit",
@@ -114,7 +117,9 @@
         "webhook",
         "checkcode",
         "免跳轉"
-      ]
+      ],
+      "private": true,
+      "skill": true
     },
     {
       "name": "PayGate",
@@ -131,7 +136,8 @@
         "purchase",
         "paygate",
         "訂單"
-      ]
+      ],
+      "private": true
     },
     {
       "name": "Pokkit",
@@ -251,7 +257,8 @@
         "字幕",
         "雙語",
         "翻譯"
-      ]
+      ],
+      "skill": true
     },
     {
       "name": "ai-content-kit",

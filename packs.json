@@ -1,0 +1,87 @@
+{
+  "packs": [
+    {
+      "id": "billing",
+      "name": "收費",
+      "solves": "免費版的上限、方案頁、升級視窗，到藍新刷卡與定期定額扣款。",
+      "kits": [
+        { "name": "paywall-kit", "role": "方案、免費上限、方案頁與付費牆" },
+        { "name": "newebpay-kit", "role": "藍新付款、定期定額、付款通知驗章" }
+      ],
+      "steps": [
+        "用 paywall-kit 的 `createPaywall({ tiers })` 定義方案與免費上限；功能閘門用 `can` / `checkQuota` 在後端判斷，被鎖的內容不送到前端。",
+        "方案頁只比免費與付費兩欄；功能按鈕不貼 PRO，撞到上限才跳升級視窗。",
+        "升級按鈕交給 newebpay-kit 產生付款表單（單次用 `mpg()`，訂閱用 `period()`），整頁導向藍新。",
+        "付款通知端點用 `parseMpgNotify` / `parsePeriodNotify` 驗章，通過才開通。開通一律以 NotifyURL 為準，不看 ReturnURL。",
+        "用訂單編號去重；訂閱每天跑一次 `queryPeriod` 對帳補漏。"
+      ]
+    },
+    {
+      "id": "auth",
+      "name": "會員與防護",
+      "solves": "註冊登入、驗證外部登入、擋濫用、保護付費檔案。",
+      "kits": [
+        { "name": "auth-kit", "role": "自己發 session：存密碼、簽發與驗證 token" },
+        { "name": "jwks-verify-kit", "role": "驗外部登入服務發的 token" },
+        { "name": "ratelimit-kit", "role": "每個 IP 的限流" },
+        { "name": "media-gate", "role": "付費檔案的簽章網址與路徑防護" }
+      ],
+      "steps": [
+        "先決定身分從哪來：自己發 session 用 auth-kit（`hashPassword` / `verifyPassword` / `signJWT` / `verifyJWT`）；身分來自外部登入服務用 jwks-verify-kit（`createJwksVerifier`）。兩條路不要混用。",
+        "secret 與金鑰一律從環境變數注入，沒設就讓它壞掉，不要退回預設值。",
+        "登入、註冊與公開端點前面放 ratelimit-kit：`limiter.check('login:' + ip, 上限)`，超過回 429。",
+        "付費或會員限定的檔案用 media-gate：確認有權觀看才 `signToken`，服務檔案時 `verifyToken` 加 `safeJoin`。"
+      ]
+    },
+    {
+      "id": "video",
+      "name": "影片",
+      "solves": "播放器核心、YouTube 自訂控制、進度條預覽縮圖、雙語字幕、等化器。",
+      "kits": [
+        { "name": "video-core-kit", "role": "播放核心" },
+        { "name": "youtube-player-kit", "role": "YouTube 自訂控制列" },
+        { "name": "storyboard-kit", "role": "進度條預覽縮圖" },
+        { "name": "bilingual-subtitle-kit", "role": "雙語字幕與翻譯快取" },
+        { "name": "subtitle-overlay-kit", "role": "字幕疊加層的排版邏輯" },
+        { "name": "audio-dsp-kit", "role": "等化器與音效" }
+      ],
+      "steps": []
+    },
+    {
+      "id": "growth",
+      "name": "成長",
+      "solves": "轉換漏斗追蹤、結構化資料、文章與銷售頁產生、產品頁產生。",
+      "kits": [
+        { "name": "funnel-kit", "role": "轉換漏斗與來源統計" },
+        { "name": "seo-schema-kit", "role": "結構化資料" },
+        { "name": "ai-content-kit", "role": "文章與銷售頁文案產生" },
+        { "name": "LaunchKit", "role": "產品頁產生" }
+      ],
+      "steps": []
+    },
+    {
+      "id": "upload",
+      "name": "上傳",
+      "solves": "大檔分塊續傳、投稿與報名入口。",
+      "kits": [
+        { "name": "chunked-upload-kit", "role": "分塊續傳" },
+        { "name": "dropkit", "role": "投稿與報名入口" }
+      ],
+      "steps": []
+    },
+    {
+      "id": "electron",
+      "name": "Electron",
+      "solves": "姊妹 app 一鍵安裝、安裝檔瘦身。",
+      "kits": [
+        { "name": "family-kit", "role": "姊妹 app 一鍵安裝面板" },
+        { "name": "electron-slim-kit", "role": "安裝檔瘦身" }
+      ],
+      "steps": [
+        "主進程 `const family = createFamily({ selfId, cacheDir, shell, fetch })`，再 `family.registerIpc(ipcMain, { isTrusted })`，preload 暴露 `familyKit`。",
+        "設定頁底部放一個容器，`FamilyKit.mount(el, window.familyKit, { title })`。",
+        "發版前跑 electron-slim-kit：`audit` → `fix --write` → 重新打包 → `verify`，最後實際開一次 app。"
+      ]
+    }
+  ]
+}
