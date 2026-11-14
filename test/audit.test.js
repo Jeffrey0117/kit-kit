@@ -122,7 +122,8 @@ test('報告:落後、複製版、違規都標出來;全部正常的打勾', () 
       { project: 'c', dir: path.join(__dirname, '..', '..', 'c'), how: ['dep'], pinned: 'fff0000', outdated: false, violations: [] }
     ]
   })
-  assert.match(report, /⚠️ a .*版本落後\(鎖在 abc1234\)/)
-  assert.match(report, /⚠️ b .*複製版/)
-  assert.match(report, /✅ c /)
+  // 位置是相對於這台機器放專案的資料夾，前面可能帶路徑（CI 上是 ../../work/…/a），只比對結尾的專案名
+  assert.match(report, /⚠️ (?:\S*\/)?a {2}.*版本落後\(鎖在 abc1234\)/)
+  assert.match(report, /⚠️ (?:\S*\/)?b {2}.*複製版/)
+  assert.match(report, /✅ (?:\S*\/)?c {2}/)
 })
