@@ -314,4 +314,5 @@ module.exports = {
   loadRegistry, syncFromGitHub, checkOverlap, recommend,
   scaffold, publish, addToRegistry, pullKit, initProject,
   listProjectDirs, scanAdoption, fetchSkill,
+  packs: require('./packs'),
 };

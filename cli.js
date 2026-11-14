@@ -6,6 +6,7 @@
 //   kit-kit audit <kit>|--all [--json]   kit 更新後檢查所有用到它的專案(版本落後、違反 kit-checks.json)
 const path = require('path');
 const forge = require('./index');
+const packs = require('./packs');
 
 const [, , cmd, ...rest] = process.argv;
 const flag = (n) => { const i = rest.indexOf('--' + n); return i >= 0 ? (rest[i + 1] && !rest[i + 1].startsWith('--') ? rest[i + 1] : true) : undefined; };
@@ -115,6 +116,55 @@ async function main() {
     return;
   }
 
+  // kit-kit packs — 套組：做一件事要用的幾個 kit + 接線順序
+  if (cmd === 'packs') {
+    const kitInfo = packs.registryKitInfo(reg);
+    console.log('\n套組（一次拿走做一件事要用的 kit 與打法）\n');
+    for (const p of packs.loadPacks()) {
+      const status = packs.packStatus(p, kitInfo);
+      console.log(`  ${p.id.padEnd(10)} ${p.name}　${status.ready ? '可用' : '整理中'}`);
+      console.log(`             ${p.solves}`);
+      console.log(`             ${p.kits.map((m) => m.name).join(', ')}`);
+      if (!status.ready) console.log(`             缺：${packs.describeMissing(status.missing)}`);
+    }
+    console.log('\n  裝進專案：kit-kit add <套組>\n');
+    return;
+  }
+
+  // kit-kit add <套組> — 把套組的打法寫進專案並安裝成員
+  if (cmd === 'add') {
+    const query = rest.find((a, i) => !a.startsWith('--') && !['--dir', '--skills-dir'].includes(rest[i - 1]));
+    const all = packs.loadPacks();
+    const pack = query && packs.findPack(all, query);
+    if (!pack) {
+      console.error(`用法: kit-kit add <套組> [--dir <專案>] [--no-install] [--skills-dir <路徑>]\n  套組：${all.map((p) => `${p.id}（${p.name}）`).join('、')}`);
+      process.exitCode = 1;
+      return;
+    }
+    const dir = typeof flag('dir') === 'string' ? path.resolve(flag('dir')) : process.cwd();
+    const skillsDir = typeof flag('skills-dir') === 'string' ? flag('skills-dir') : undefined;
+    try {
+      const out = packs.addPack(pack, {
+        dir, owner: reg.owner, kits: reg.kits, kitInfo: packs.registryKitInfo(reg),
+        fetchSkill: forge.fetchSkill,
+        run: (command, cwd) => require('child_process').execSync(command, { cwd, stdio: 'inherit' }),
+        install: !flag('no-install'),
+        ...(skillsDir ? { skillsDir } : {}),
+      });
+      console.log(`\n「${pack.name}」套組已裝進 ${dir}`);
+      console.log(`  打法：${out.skillPath}`);
+      if (out.installed) console.log(`  已安裝：${out.command}`);
+      else if (out.command) console.log(`  還沒安裝，自己跑：${out.command}`);
+      console.log('\n  接線順序：');
+      pack.steps.forEach((s, i) => console.log(`  ${i + 1}. ${s}`));
+      console.log('');
+    } catch (e) {
+      console.error(`\n✗ ${e.message}\n`);
+      process.exitCode = 1;
+    }
+    return;
+  }
+
   // kit-kit audit <kit>|--all [--json]  kit 更新後:找出用到它的專案,檢查版本落後與違反 kit 規則(kit-checks.json)
   if (cmd === 'audit') {
     const audit = require('./audit')
@@ -204,6 +254,8 @@ async function main() {
   kit-kit update <kit> [--dir path]     補/更新現有 kit（clone 下來改 → commit+push）
   kit-kit init <project> [--with a,b,c] 勾選 kit → 產一個已組好的專案骨架
   kit-kit map [baseDir]                 採用地圖：哪個專案用了哪些 kit + 誰還沒回套
+  kit-kit packs                         列出套組（做一件事要用的幾個 kit + 接線順序）
+  kit-kit add <套組> [--dir] [--no-install]  把套組的打法寫進專案並安裝成員
 `);
 }
 

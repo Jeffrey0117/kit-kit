@@ -110,8 +110,27 @@ function composePackSkill(pack, skills, owner) {
   return [head, ...bodies].join('\n\n') + '\n';
 }
 
+// 把套組裝進專案：先抓齊打法才寫檔，再安裝。fetchSkill / run 由呼叫端注入。
+function addPack(pack, opts) {
+  const { dir, owner, kits, kitInfo, fetchSkill, run, install = true, skillsDir = DEFAULT_SKILLS_DIR } = opts;
+  const status = packStatus(pack, kitInfo);
+  if (!status.ready) throw new Error(`「${pack.name}」套組還在整理中：${describeMissing(status.missing)}`);
+
+  const skills = Object.fromEntries(pack.kits.map((m) => [m.name, fetchSkill(m.name, owner)]));
+  const content = composePackSkill(pack, skills, owner);
+
+  const skillPath = path.join(dir, skillRelPath(pack, skillsDir));
+  fs.mkdirSync(path.dirname(skillPath), { recursive: true });
+  fs.writeFileSync(skillPath, content);
+
+  const command = installCommand(pack, kits, owner);
+  const canInstall = install && !!command && fs.existsSync(path.join(dir, 'package.json'));
+  if (canInstall) run(command, dir);
+  return { skillPath, command, installed: canInstall };
+}
+
 module.exports = {
   loadPacks, findPack, registryKitInfo, packStatus, describeMissing,
-  installCommand, addCommand, aiPrompt, composePackSkill,
+  installCommand, addCommand, aiPrompt, composePackSkill, addPack,
   skillName, skillRelPath,
 };
