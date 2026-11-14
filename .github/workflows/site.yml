@@ -1,0 +1,49 @@
+name: site
+
+# 介紹站：從 registry、packs.json 與各 kit repo 的 README 產生，發到 GitHub Pages。
+# 每天重建一次，其他 kit repo 改了 README 或補了 SKILL.md，站會自己跟上。
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+  schedule:
+    - cron: '20 1 * * *' # 每天 09:20（台北）
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm test
+      - run: npm run site
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # 不公開的字詞（逗號分隔）。README 提到任何一個，那份 README 就不上站。
+          KITSITE_DENY: ${{ secrets.KITSITE_DENY }}
+          KITSITE_REQUIRE_DENY: '1'
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

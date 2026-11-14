@@ -37,6 +37,33 @@ npx github:Jeffrey0117/kit-kit init my-app               # 勾選 kit → 產一
 | `check "<描述/關鍵字>"` | 比對現有 kit 的涵蓋度 → **reuse**（去強化）或 **extract**（該抽新的）。 |
 | `new <name> [--desc] [--dir] [--repo] [--force]` | scaffold 標準骨架；`--repo` 連 GitHub public repo 一起建並加進 registry。 |
 
+## 套組（pack）
+
+kit 上面那一層：做一件事（收費、會員與防護…）要用的幾個 kit、接線順序、合在一起的打法。
+定義在 `packs.json`，同一份資料供指令與介紹站使用。
+
+```bash
+npx github:Jeffrey0117/kit-kit packs         # 有哪些套組、哪些可用
+npx github:Jeffrey0117/kit-kit add billing   # 在專案資料夾裡跑：安裝成員 + 把整包打法寫進 .claude/skills/billing-pack/
+```
+
+`add` 也接受中文名（`add 收費`）。`--no-install` 只寫打法不安裝；`--skills-dir <路徑>` 換寫入位置；`--dir <專案>` 指定專案。
+
+**可用**的條件：成員全部公開，且每個都有 `SKILL.md`。缺的補齊後自動變可用，不用改程式。
+要加新套組就在 `packs.json` 加一筆（`id`、`name`、`solves`、`kits`、`steps`）。
+
+## 介紹站
+
+<https://jeffrey0117.github.io/kit-kit/> — 套組與所有公開 kit 的對外介紹。
+
+```bash
+npm run site    # 抓 GitHub → 產生 _site/，直接開 _site/index.html 看
+```
+
+- 內容全部自動產生：registry、`packs.json`、各 kit repo 的 README。私有 repo 不會出現。
+- 站上的字集中在 `site/copy.json`，改字不用碰程式。
+- push 到 master 會重新發布，另外每天自動重建一次（`.github/workflows/site.yml`）。
+
 ## 給 agent 跑
 
 `AGENTS.md` 是**協定**：在任何專案裡工作的 agent（Claude 等）聞到「這塊跨專案通用」時，照它的決策流程 —— 先 `check`，有就強化/整合、沒有才 `new`。把它放進專案讓 agent 讀，就能自動維護生態系。

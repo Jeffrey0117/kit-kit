@@ -5,9 +5,29 @@
   "kind": "tool",
   "work": {
     "guide": "AGENTS.md",
-    "test": "npm test"
+    "test": "npm test",
+    "build": "npm run site"
   },
+  "site": "https://jeffrey0117.github.io/kit-kit/",
   "offers": [
+    {
+      "id": "packs",
+      "what": "列出套組：做一件事（收費、會員與防護、Electron…）要用的幾個 kit、接線順序，以及哪些已可用、哪些還缺打法。想整包拿而不是一個一個挑時先跑。",
+      "how": "cli",
+      "cli": "npx github:Jeffrey0117/kit-kit packs"
+    },
+    {
+      "id": "add",
+      "what": "把一個套組裝進專案：安裝成員 kit，並把成員的 SKILL.md 合成一份寫進 .claude/skills/<套組>-pack/SKILL.md，印出接線順序。套組還缺打法或任何一份抓不到就中止，不寫半套。",
+      "how": "cli",
+      "cli": "npx github:Jeffrey0117/kit-kit add <套組 id 或中文名> [--dir <專案>] [--no-install] [--skills-dir <路徑>]"
+    },
+    {
+      "id": "site",
+      "what": "對外介紹站（GitHub Pages）：套組頁有接線順序與兩種拿法（複製指令 / 複製給 AI），每個公開 kit 一頁。由 registry、packs.json 與各 repo 的 README 自動產生；文字在 site/copy.json。",
+      "how": "url",
+      "url": "https://jeffrey0117.github.io/kit-kit/"
+    },
     {
       "id": "list",
       "what": "列出 registry 裡現有的 kit（名稱、涵蓋範圍、repo），有 gh 的話順便撈 GitHub 上還沒登錄的。想知道生態系有哪些 kit 時跑。",

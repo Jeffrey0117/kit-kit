@@ -14,9 +14,38 @@ const SAFE_IPS = new Set(['127.0.0.1', '0.0.0.0']);
 const IPV4 = /(?<![\d.])(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})(?![\d.])/g;
 const PRIVATE_KEY = /PRIVATE KEY/;
 
-// 對外頁面不該出現的東西：IP 位址、私鑰。私人網域由各 kit push 時的守門員擋。
-function scanLeaks(files) {
+// 不公開的字詞名單（私人網域之類）。名單本身不能進 repo，所以從環境變數 KITSITE_DENY 讀，逗號分隔。
+function parseDenyList(value) {
+  return String(value || '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
+}
+
+// 正式發布（KITSITE_REQUIRE_DENY=1）時名單一定要有：寧可不發，也不要沒檢查就發。
+function requireDenyList(denyList, required) {
+  if (required === '1' && !denyList.length) {
+    throw new Error('KITSITE_DENY 沒有設定，正式發布不能沒有不公開字詞的檢查');
+  }
+}
+
+// README 提到名單裡的字詞 → 整份不上站（kit 頁改顯示「請看原始碼」），並回報是哪幾個 kit。
+function withholdReadmes(repos, denyList) {
+  const hit = (text) => denyList.some((term) => String(text).toLowerCase().includes(term));
+  const withheld = Object.keys(repos).filter((name) => hit(repos[name].readme));
+  if (!withheld.length) return { repos, withheld };
+  const cleaned = Object.fromEntries(Object.entries(repos).map(([name, repo]) => (
+    [name, withheld.includes(name) ? { ...repo, readme: '' } : repo]
+  )));
+  return { repos: cleaned, withheld };
+}
+
+// 對外頁面不該出現的東西：名單裡的字詞（任何檔案）、IP 位址與私鑰（頁面）。
+function scanLeaks(files, denyList = []) {
   const leaks = [];
+  for (const file of files) {
+    const lower = file.content.toLowerCase();
+    for (const term of denyList) {
+      if (lower.includes(term)) leaks.push({ path: file.path, match: '（不公開名單中的字詞）' });
+    }
+  }
   for (const file of files.filter((f) => f.path.endsWith('.html'))) {
     for (const m of file.content.matchAll(IPV4)) {
       const isAddress = m.slice(1, 5).every((part) => Number(part) <= 255);
@@ -49,27 +78,32 @@ async function build() {
     css: fs.readFileSync(path.join(__dirname, 'style.css'), 'utf8'),
     js: fs.readFileSync(path.join(__dirname, 'app.js'), 'utf8'),
   };
-  const repos = await fetchRepos(registry.owner, registry.kits.map((k) => k.name), { token: process.env.GITHUB_TOKEN });
+  const denyList = parseDenyList(process.env.KITSITE_DENY);
+  requireDenyList(denyList, process.env.KITSITE_REQUIRE_DENY);
+  const fetched = await fetchRepos(registry.owner, registry.kits.map((k) => k.name), { token: process.env.GITHUB_TOKEN });
+  const { repos, withheld } = withholdReadmes(fetched, denyList);
   const model = buildModel({ registry, packs: loadPacks(), repos, asOf: today() });
   if (!model.kits.length) throw new Error('沒有抓到任何公開 kit，不產生空的站');
 
   const files = renderSite(model, copy, assets);
-  const leaks = scanLeaks(files);
+  const leaks = scanLeaks(files, denyList);
   if (leaks.length) {
     throw new Error(`頁面裡有不該對外的內容，停止產生：\n${leaks.map((l) => `  ${l.path}: ${l.match}`).join('\n')}`);
   }
   writeSite(files, OUT);
-  return { model, files };
+  return { model, files, withheld, guarded: denyList.length > 0 };
 }
 
 if (require.main === module) {
-  build().then(({ model, files }) => {
+  build().then(({ model, files, withheld, guarded }) => {
     const pending = model.packs.filter((p) => !p.ready).map((p) => p.id).join(', ') || '無';
     process.stdout.write(`_site/ 已產生：${files.length} 個檔案，${model.stats.kits} 個 kit，${model.stats.readyPacks} 個套組可用（整理中：${pending}）\n`);
+    if (withheld.length) process.stdout.write(`README 含不公開字詞，沒有上站：${withheld.join(', ')}（去那個 repo 把 README 改掉就會恢復）\n`);
+    if (!guarded) process.stdout.write('注意：沒有設 KITSITE_DENY，這次沒有檢查不公開字詞。\n');
   }).catch((err) => {
     process.stderr.write(`build 失敗：${err.message}\n`);
     process.exit(1);
   });
 }
 
-module.exports = { build, scanLeaks };
+module.exports = { build, scanLeaks, withholdReadmes, parseDenyList, requireDenyList };

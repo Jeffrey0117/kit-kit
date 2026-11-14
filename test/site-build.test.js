@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert');
 const { fetchRepos } = require('../site/fetch');
-const { scanLeaks } = require('../site/build');
+const { scanLeaks, withholdReadmes, parseDenyList, requireDenyList } = require('../site/build');
 
 // 假的 GitHub：記下被要了哪些網址
 function fakeGitHub({ repoList, files }) {
@@ -85,6 +85,40 @@ test('scanLeaks flags private-looking IPv4 addresses and private keys', () => {
   ]);
   assert.deepStrictEqual(leaks.map((l) => l.path), ['a.html', 'b.html']);
   assert.strictEqual(leaks[0].match, '10.1.2.3');
+});
+
+test('withholdReadmes blanks a README that mentions a denied term and reports which kit', () => {
+  const repos = {
+    'clean-kit': { public: true, branch: 'master', readme: '# 乾淨', hasSkill: true, logo: null },
+    'leaky-kit': { public: true, branch: 'master', readme: '示範站：https://demo.Private-Host.example/x', hasSkill: true, logo: null },
+  };
+  const out = withholdReadmes(repos, ['private-host.example']);
+  assert.deepStrictEqual(out.withheld, ['leaky-kit']);
+  assert.strictEqual(out.repos['leaky-kit'].readme, '');
+  assert.strictEqual(out.repos['leaky-kit'].hasSkill, true);
+  assert.strictEqual(out.repos['clean-kit'].readme, '# 乾淨');
+  assert.strictEqual(repos['leaky-kit'].readme.includes('Private-Host'), true, 'input must not be mutated');
+});
+
+test('withholdReadmes with no denied terms changes nothing', () => {
+  const repos = { a: { public: true, branch: 'master', readme: 'x', hasSkill: false, logo: null } };
+  assert.deepStrictEqual(withholdReadmes(repos, []), { repos, withheld: [] });
+});
+
+test('parseDenyList splits, trims and drops empty entries', () => {
+  assert.deepStrictEqual(parseDenyList(' a.example , ,B.example,'), ['a.example', 'b.example']);
+  assert.deepStrictEqual(parseDenyList(undefined), []);
+});
+
+test('requireDenyList refuses to publish unguarded when the guard is required', () => {
+  assert.throws(() => requireDenyList([], '1'), /KITSITE_DENY/);
+  assert.doesNotThrow(() => requireDenyList(['a.example'], '1'));
+  assert.doesNotThrow(() => requireDenyList([], undefined));
+});
+
+test('scanLeaks flags a denied term in any generated file, not only pages', () => {
+  const leaks = scanLeaks([{ path: 'assets/logos/x.svg', content: '<svg><!-- Private-Host.example --></svg>' }], ['private-host.example']);
+  assert.deepStrictEqual(leaks.map((l) => l.path), ['assets/logos/x.svg']);
 });
 
 test('scanLeaks lets loopback addresses and version numbers through', () => {
