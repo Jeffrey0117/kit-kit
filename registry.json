@@ -40,7 +40,8 @@
         "防護",
         "簽章",
         "存取控制"
-      ]
+      ],
+      "skill": true
     },
     {
       "name": "auth-kit",
@@ -77,7 +78,8 @@
         "濫用",
         "防護",
         "flood"
-      ]
+      ],
+      "skill": true
     },
     {
       "name": "onboarding-kit",
