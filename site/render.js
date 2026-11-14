@@ -226,14 +226,14 @@ function dropTitle(md) {
   return [...lines.slice(0, i), ...lines.slice(i + 1)].join('\n');
 }
 
-function kitPage(kit, model, copy) {
+function kitPage(kit, model, copy, blockedUrls) {
   const root = '../../';
   const blob = `${kit.repo}/blob/${kit.branch}`;
   const raw = `https://raw.githubusercontent.com/${model.owner}/${kit.name}/${kit.branch}`;
   const packLinks = kit.packs.map((id) => model.packs.find((p) => p.id === id)).map((p) => (p.ready
     ? `<a class="chip" href="${packHref(root, p)}">${e(p.name)}</a>`
     : `<span class="chip dim">${e(p.name)}</span>`)).join('');
-  const readme = renderMarkdown(dropTitle(kit.readme), { repoUrl: blob, rawUrl: raw });
+  const readme = renderMarkdown(dropTitle(kit.readme), { repoUrl: blob, rawUrl: raw, blockedUrls });
   const body = `  <header class="kit-head">
     <div>
       <p class="eyebrow"><a href="${root}index.html#kits">${e(copy.kit.back)}</a> / ${e(copy.types[kit.type] || kit.type)}</p>
@@ -264,7 +264,7 @@ function renderSite(model, copy, assets) {
   const pages = [
     { path: 'index.html', content: homePage(model, copy) },
     ...model.packs.filter((p) => p.ready).map((p) => ({ path: `packs/${p.id}/index.html`, content: packPage(p, model, copy) })),
-    ...model.kits.map((k) => ({ path: `kits/${k.slug}/index.html`, content: kitPage(k, model, copy) })),
+    ...model.kits.map((k) => ({ path: `kits/${k.slug}/index.html`, content: kitPage(k, model, copy, assets.blockedUrls || []) })),
   ];
   const logos = model.kits.filter((k) => k.logo).map((k) => ({ path: `assets/logos/${k.slug}.svg`, content: k.logo }));
   return [

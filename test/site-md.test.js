@@ -90,3 +90,19 @@ test('empty or missing input renders nothing', () => {
   assert.strictEqual(md(''), '');
   assert.strictEqual(renderMarkdown(undefined, CTX), '');
 });
+
+test('HTML comments never reach the page, inline or spanning blank lines', () => {
+  const out = md('部署 <!-- internal: ssh root@box --> 完成\n\n- 項目 <!-- 私人備註 -->\n\n<!-- 開頭\n\n中間段落\n-->\n\n結尾');
+  for (const hidden of ['internal', 'ssh', '私人備註', '中間段落', '--&gt;', '&lt;!--']) {
+    assert.ok(!out.includes(hidden), `comment text leaked: ${hidden}`);
+  }
+  assert.ok(out.includes('部署') && out.includes('完成') && out.includes('結尾'));
+});
+
+test('links to blocked URLs are shown as plain text', () => {
+  const ctx = { ...CTX, blockedUrls: ['https://github.com/o/Hidden'] };
+  const out = renderMarkdown('見 [Hidden](https://github.com/o/hidden) 與 [子頁](https://github.com/o/Hidden/blob/x.md)，還有 [別的](https://github.com/o/HiddenNot)', ctx);
+  assert.ok(!out.includes('github.com/o/hidden"') && !out.includes('Hidden/blob'));
+  assert.ok(out.includes('Hidden') && out.includes('子頁'));
+  assert.ok(out.includes('<a href="https://github.com/o/HiddenNot">別的</a>'));
+});

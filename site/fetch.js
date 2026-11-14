@@ -24,35 +24,55 @@ async function listRepos(owner, { fetchImpl, token }) {
   return all;
 }
 
-// 抓不到（404 之類）回 null，不 throw：少一份 README 不該讓整個站 build 失敗
-async function rawFile(url, fetchImpl) {
+const RETRY_DELAY_MS = 1500;
+// logo 會原樣放到站上；直接開那個檔案時，裡面的腳本會在這個網域執行，所以帶腳本的一律不收
+const UNSAFE_SVG = /<script|<foreignObject|\son\w+\s*=|javascript:/i;
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function tryRaw(url, fetchImpl) {
   try {
     const res = await fetchImpl(url, { headers: { 'User-Agent': CLIENT } });
-    return res.ok ? await res.text() : null;
+    if (res.status === 404) return { found: false };
+    if (res.ok) return { found: true, text: await res.text() };
+    return { error: `HTTP ${res.status}` };
   } catch (err) {
-    return null;
+    return { error: err.message };
   }
 }
 
-async function fetchRepo(owner, meta, fetchImpl) {
+// 只有 404 算「沒有這個檔」。其他錯誤（限流、伺服器錯誤、斷線）重試一次，還是不行就讓 build 失敗：
+// 把暫時抓不到當成檔案不存在，會讓套組無聲無息地從站上消失；build 失敗的話上一版還留著。
+async function rawFile(url, fetchImpl, retryDelayMs) {
+  let result = await tryRaw(url, fetchImpl);
+  if (result.error) {
+    await wait(retryDelayMs);
+    result = await tryRaw(url, fetchImpl);
+  }
+  if (result.error) throw new Error(`下載失敗 ${url}: ${result.error}`);
+  return result.found ? result.text : null;
+}
+
+async function fetchRepo(owner, meta, fetchImpl, retryDelayMs) {
   const base = `${RAW}/${owner}/${meta.name}/${meta.default_branch}`;
   const [readme, skill, logo] = await Promise.all(
-    ['README.md', 'SKILL.md', 'logo.svg'].map((file) => rawFile(`${base}/${file}`, fetchImpl)),
+    ['README.md', 'SKILL.md', 'logo.svg'].map((file) => rawFile(`${base}/${file}`, fetchImpl, retryDelayMs)),
   );
+  const safeLogo = logo && logo.includes('<svg') && !UNSAFE_SVG.test(logo);
   return {
     public: true,
     branch: meta.default_branch,
     readme: readme || '',
     hasSkill: skill !== null,
-    logo: logo && logo.includes('<svg') ? logo : null,
+    logo: safeLogo ? logo : null,
   };
 }
 
-async function fetchRepos(owner, names, { fetchImpl = fetch, token } = {}) {
+async function fetchRepos(owner, names, { fetchImpl = fetch, token, retryDelayMs = RETRY_DELAY_MS } = {}) {
   const wanted = new Set(names);
   const list = await listRepos(owner, { fetchImpl, token });
   const open = list.filter((r) => wanted.has(r.name) && r.private === false);
-  const entries = await Promise.all(open.map(async (meta) => [meta.name, await fetchRepo(owner, meta, fetchImpl)]));
+  const entries = await Promise.all(open.map(async (meta) => [meta.name, await fetchRepo(owner, meta, fetchImpl, retryDelayMs)]));
   return Object.fromEntries(entries);
 }
 

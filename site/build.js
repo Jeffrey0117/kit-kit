@@ -11,12 +11,18 @@ const { loadPacks } = require('../packs');
 const ROOT = path.join(__dirname, '..');
 const OUT = path.join(ROOT, '_site');
 const SAFE_IPS = new Set(['127.0.0.1', '0.0.0.0']);
-const IPV4 = /(?<![\d.])(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})(?![\d.])/g;
+// 前後不能緊接數字或「.數字」（那是版本號的一部分）；句尾的句點不算
+const IPV4 = /(?<!\d)(?<!\d\.)(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})(?!\d)(?!\.\d)/g;
 const PRIVATE_KEY = /PRIVATE KEY/;
 
 // 不公開的字詞名單（私人網域之類）。名單本身不能進 repo，所以從環境變數 KITSITE_DENY 讀，逗號分隔。
 function parseDenyList(value) {
   return String(value || '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
+}
+
+// registry 裡有、但沒上站的 repo（私有或抓不到）：README 裡連過去的連結要拿掉，不然訪客點了是 404
+function blockedRepoUrls(registry, repos) {
+  return registry.kits.filter((k) => !repos[k.name]).map((k) => k.repo);
 }
 
 // 正式發布（KITSITE_REQUIRE_DENY=1）時名單一定要有：寧可不發，也不要沒檢查就發。
@@ -85,7 +91,7 @@ async function build() {
   const model = buildModel({ registry, packs: loadPacks(), repos, asOf: today() });
   if (!model.kits.length) throw new Error('沒有抓到任何公開 kit，不產生空的站');
 
-  const files = renderSite(model, copy, assets);
+  const files = renderSite(model, copy, { ...assets, blockedUrls: blockedRepoUrls(registry, repos) });
   const leaks = scanLeaks(files, denyList);
   if (leaks.length) {
     throw new Error(`頁面裡有不該對外的內容，停止產生：\n${leaks.map((l) => `  ${l.path}: ${l.match}`).join('\n')}`);
@@ -106,4 +112,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { build, scanLeaks, withholdReadmes, parseDenyList, requireDenyList };
+module.exports = { build, scanLeaks, withholdReadmes, parseDenyList, requireDenyList, blockedRepoUrls };

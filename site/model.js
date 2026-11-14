@@ -38,7 +38,9 @@ function toPack(pack, kitsByName, owner) {
 
 function buildModel({ registry, packs, repos, asOf }) {
   const owner = registry.owner;
-  const isPublic = (name) => !!repos[name] && repos[name].public === true;
+  // 兩邊都要說公開才算：GitHub 回報公開，而且 registry 沒標 private
+  const flaggedPrivate = new Set(registry.kits.filter((k) => k.private).map((k) => k.name));
+  const isPublic = (name) => !flaggedPrivate.has(name) && !!repos[name] && repos[name].public === true;
   const packIdsOf = (name) => packs.filter((p) => p.kits.some((m) => m.name === name)).map((p) => p.id);
 
   const kits = registry.kits

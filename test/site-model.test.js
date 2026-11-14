@@ -77,3 +77,9 @@ test('stats count what is on the site', () => {
   assert.deepStrictEqual(model().stats, { kits: 3, readyPacks: 1, withSkill: 2 });
   assert.strictEqual(model().asOf, '2026-11-14');
 });
+
+test('a kit the registry marks private is left out even if GitHub reports it public', () => {
+  const reg = { ...registry, kits: registry.kits.map((k) => (k.name === 'a-kit' ? { ...k, private: true } : k)) };
+  const m = buildModel({ registry: reg, packs, repos, asOf: '2026-11-14' });
+  assert.ok(!m.kits.some((k) => k.name === 'a-kit'));
+});

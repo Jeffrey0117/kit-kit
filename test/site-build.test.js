@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert');
 const { fetchRepos } = require('../site/fetch');
-const { scanLeaks, withholdReadmes, parseDenyList, requireDenyList } = require('../site/build');
+const { scanLeaks, withholdReadmes, parseDenyList, requireDenyList, blockedRepoUrls } = require('../site/build');
 
 // 假的 GitHub：記下被要了哪些網址
 function fakeGitHub({ repoList, files }) {
@@ -124,4 +124,41 @@ test('scanLeaks flags a denied term in any generated file, not only pages', () =
 test('scanLeaks lets loopback addresses and version numbers through', () => {
   const files2 = [{ path: 'a.html', content: 'listen on 127.0.0.1 or 0.0.0.0, version 1.2.3 and v0.4.5, 版本 22.16.0' }];
   assert.deepStrictEqual(scanLeaks(files2), []);
+});
+
+test('scanLeaks catches an address that ends a sentence', () => {
+  const leaks = scanLeaks([{ path: 'a.html', content: '主機在 10.0.0.5. 另一台 192.168.1.10...' }]);
+  assert.deepStrictEqual(leaks.map((l) => l.match), ['10.0.0.5', '192.168.1.10']);
+});
+
+test('fetchRepos fails the build when a file download errors instead of treating it as absent', async () => {
+  const { fetchImpl: ok } = fakeGitHub({ repoList, files });
+  const flaky = async (url, init) => (url.endsWith('/open-kit/master/SKILL.md')
+    ? { ok: false, status: 503, text: async () => 'unavailable' }
+    : ok(url, init));
+  await assert.rejects(fetchRepos('me', NAMES, { fetchImpl: flaky, retryDelayMs: 0 }), /503/);
+});
+
+test('fetchRepos retries a failed download once before giving up', async () => {
+  const { fetchImpl: ok } = fakeGitHub({ repoList, files });
+  let failed = false;
+  const once = async (url, init) => {
+    if (url.endsWith('/open-kit/master/SKILL.md') && !failed) { failed = true; return { ok: false, status: 503, text: async () => '' }; }
+    return ok(url, init);
+  };
+  const repos = await fetchRepos('me', NAMES, { fetchImpl: once, retryDelayMs: 0 });
+  assert.strictEqual(repos['open-kit'].hasSkill, true);
+});
+
+test('fetchRepos drops a logo that carries script or event handlers', async () => {
+  for (const bad of ['<svg><script>alert(1)</script></svg>', '<svg onload="x()"/>', '<svg><foreignObject/></svg>', '<svg><a href="javascript:x"/></svg>']) {
+    const { fetchImpl } = fakeGitHub({ repoList, files: { ...files, [`${RAW}/open-kit/master/logo.svg`]: bad } });
+    const repos = await fetchRepos('me', NAMES, { fetchImpl });
+    assert.strictEqual(repos['open-kit'].logo, null, bad);
+  }
+});
+
+test('blockedRepoUrls lists registry repos that did not make it onto the site', () => {
+  const reg = { owner: 'me', kits: [{ name: 'open-kit', repo: 'https://github.com/me/open-kit' }, { name: 'closed-kit', repo: 'https://github.com/me/closed-kit' }] };
+  assert.deepStrictEqual(blockedRepoUrls(reg, { 'open-kit': {} }), ['https://github.com/me/closed-kit']);
 });

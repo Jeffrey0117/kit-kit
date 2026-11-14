@@ -117,3 +117,12 @@ test('registry text is escaped wherever it is printed', () => {
 test('a kit with an empty README still gets a page', () => {
   assert.ok(html('kits/b-kit/index.html').includes('乙元件'));
 });
+
+test('a README link to a blocked repo is rendered without the link', () => {
+  const r2 = { ...repos, 'a-kit': { ...repos['a-kit'], readme: '搭配 [另一個](https://github.com/Jeffrey0117/Other-Thing) 使用' } };
+  const m2 = buildModel({ registry, packs, repos: r2, asOf: '2026-11-14' });
+  const out = renderSite(m2, copy, { css: '', js: '', blockedUrls: ['https://github.com/Jeffrey0117/Other-Thing'] });
+  const page = out.find((f) => f.path === 'kits/a-kit/index.html').content;
+  assert.ok(page.includes('另一個'));
+  assert.ok(!page.includes('github.com/Jeffrey0117/Other-Thing'));
+});

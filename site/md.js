@@ -17,7 +17,17 @@ const RE = {
 };
 
 // 已跳脫的網址 → 可以放進 href/src 的網址；不放行的回 null
-function resolveUrl(url, base) {
+// 不該連過去的網址（例如沒公開的 repo）：完全相同，或是它底下的路徑
+function isBlocked(url, blocked) {
+  const u = url.toLowerCase();
+  return blocked.some((b) => {
+    const prefix = b.toLowerCase();
+    return u === prefix || ['/', '#', '?'].some((sep) => u.startsWith(prefix + sep));
+  });
+}
+
+function resolveUrl(url, base, blocked = []) {
+  if (isBlocked(url, blocked)) return null;
   if (/^https?:\/\//i.test(url) || url.startsWith('#')) return url;
   if (/^[a-z][a-z0-9+.-]*:/i.test(url) || url.startsWith('//')) return null;
   return base ? `${base}/${url.replace(/^\.?\//, '')}` : null;
@@ -31,11 +41,11 @@ function inline(text, ctx) {
   });
   return escapeHtml(held)
     .replace(/!\[([^\]]*)\]\(([^)\s]+)[^)]*\)/g, (_, alt, url) => {
-      const src = resolveUrl(url, ctx.rawUrl);
+      const src = resolveUrl(url, ctx.rawUrl, ctx.blockedUrls);
       return src ? `<img src="${src}" alt="${alt}" loading="lazy">` : alt;
     })
     .replace(/\[([^\]]+)\]\(([^)\s]+)[^)]*\)/g, (_, label, url) => {
-      const href = resolveUrl(url, ctx.repoUrl);
+      const href = resolveUrl(url, ctx.repoUrl, ctx.blockedUrls);
       return href ? `<a href="${href}">${label}</a>` : label;
     })
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
@@ -167,7 +177,9 @@ function blocks(lines, ctx) {
 
 function renderMarkdown(md, ctx = {}) {
   if (!md) return '';
-  return blocks(String(md).replace(/\r\n?/g, '\n').replace(/\t/g, '    ').split('\n'), ctx);
+  // HTML 註解在 GitHub 上看不到，作者會當成私下的備註，所以整段拿掉（沒收尾的拿到檔尾）
+  const visible = String(md).replace(/<!--[\s\S]*?(-->|$)/g, '');
+  return blocks(visible.replace(/\r\n?/g, '\n').replace(/\t/g, '    ').split('\n'), ctx);
 }
 
 // 單行文字裡的 `code`、**粗體**、連結（接線步驟這種短句用）
