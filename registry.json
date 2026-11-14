@@ -480,6 +480,14 @@
         "打包"
       ],
       "skill": true
+    },
+    {
+      "name": "whisper-kit",
+      "covers": "本機語音辨識（faster-whisper）：影片/音檔 → 帶時間的逐字稿。顯卡優先、失敗退回 CPU、即時進度、斷句、中文轉台灣繁體、非預期語言防呆。Python 模組 + CLI + Node 包裝，不花錢。",
+      "repo": "https://github.com/Jeffrey0117/whisper-kit",
+      "install": "npm i github:Jeffrey0117/whisper-kit",
+      "keywords": [],
+      "skill": true
     }
   ]
 }
