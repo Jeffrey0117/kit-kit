@@ -1,0 +1,66 @@
+{
+  "site": {
+    "name": "kit-kit",
+    "description": "做一件事要用的幾個 kit、接線順序與打法，包成套組。一行指令裝進專案，或整段貼給 AI 讓它接。"
+  },
+  "nav": { "home": "kit-kit", "packs": "套組", "kits": "全部 kit", "github": "GitHub" },
+  "home": {
+    "eyebrow": "KIT-KIT",
+    "title": "整包抽來用",
+    "lede": "做一件事要用的幾個 kit、接線順序、踩過的坑，包成一個套組。一行指令裝進專案，或整段貼給 AI 讓它接。",
+    "factPacks": "個套組可用",
+    "factKits": "個 kit",
+    "factSkill": "個附打法",
+    "asOf": "數字截至",
+    "ctaPacks": "看套組",
+    "packsTitle": "套組",
+    "packsLede": "每一包都是成員全部公開、每個都附打法才上架。",
+    "packLink": "看這一包",
+    "pendingTitle": "整理中",
+    "pendingLede": "成員的打法補齊後就會開放。kit 本身現在就能單獨拿。",
+    "pendingMissing": "還缺打法",
+    "howTitle": "兩種拿法",
+    "howLede": "每個套組頁都有這兩顆按鈕。下面是「{pack}」套組的樣子。",
+    "kitsTitle": "全部 kit",
+    "kitsLede": "不想整包拿，也可以一個一個拿。"
+  },
+  "ways": {
+    "commandTitle": "複製指令",
+    "commandText": "在專案資料夾裡跑。它會安裝成員，並把整包的打法寫進 .claude/skills，之後 AI 助手做這類功能時會自己讀。",
+    "aiTitle": "複製給 AI",
+    "aiText": "整段貼進 Claude Code、Cursor 這類助手。它會自己跑指令、讀打法、照順序接線。"
+  },
+  "pack": {
+    "eyebrow": "套組",
+    "stepsTitle": "怎麼串",
+    "stepsLede": "照這個順序接。細節與地雷在裝進專案的打法檔裡。",
+    "waysTitle": "兩種拿法",
+    "membersTitle": "這一包有什麼",
+    "back": "所有套組"
+  },
+  "kit": {
+    "installTitle": "安裝",
+    "hasSkill": "附打法",
+    "skillLink": "看打法",
+    "inPacks": "所屬套組",
+    "repo": "原始碼",
+    "readmeTitle": "說明",
+    "noReadme": "這個 kit 還沒有說明文件，請直接看原始碼。",
+    "back": "全部 kit"
+  },
+  "types": {
+    "kit": "程式 kit",
+    "component": "介面元件",
+    "template": "範本",
+    "service": "自架服務"
+  },
+  "slip": {
+    "title": "裝箱單",
+    "skills": "打法",
+    "skillsUnit": "份",
+    "steps": "接線",
+    "stepsUnit": "步"
+  },
+  "copy": { "button": "複製", "done": "已複製" },
+  "footer": { "source": "這個站由 kit-kit 的 registry 自動產生", "license": "MIT" }
+}

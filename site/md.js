@@ -170,4 +170,9 @@ function renderMarkdown(md, ctx = {}) {
   return blocks(String(md).replace(/\r\n?/g, '\n').replace(/\t/g, '    ').split('\n'), ctx);
 }
 
-module.exports = { renderMarkdown, escapeHtml };
+// 單行文字裡的 `code`、**粗體**、連結（接線步驟這種短句用）
+function renderInline(text, ctx = {}) {
+  return inline(String(text || ''), ctx);
+}
+
+module.exports = { renderMarkdown, renderInline, escapeHtml };

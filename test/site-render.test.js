@@ -1,0 +1,119 @@
+const test = require('node:test');
+const assert = require('node:assert');
+const path = require('path');
+const { renderSite } = require('../site/render');
+const { buildModel } = require('../site/model');
+const { escapeHtml } = require('../site/md');
+const copy = require('../site/copy.json');
+
+const registry = {
+  owner: 'Jeffrey0117',
+  kits: [
+    { name: 'a-kit', covers: '甲功能 <b>粗</b>', repo: 'https://github.com/Jeffrey0117/a-kit', install: 'npm i github:Jeffrey0117/a-kit' },
+    { name: 'B-Kit', type: 'component', covers: '乙元件', repo: 'https://github.com/Jeffrey0117/B-Kit', install: 'npm i github:Jeffrey0117/B-Kit' },
+    { name: 'svc', type: 'service', covers: '一個服務', repo: 'https://github.com/Jeffrey0117/svc', install: 'x' },
+    { name: 'secret-kit', covers: '不公開', repo: 'https://github.com/Jeffrey0117/secret-kit', install: 'x' },
+  ],
+};
+const repos = {
+  'a-kit': { public: true, branch: 'master', readme: '# a-kit 標題\n\n甲的說明 `code`\n\n[文件](docs/x.md)', hasSkill: true, logo: '<svg xmlns="http://www.w3.org/2000/svg"/>' },
+  'B-Kit': { public: true, branch: 'main', readme: '', hasSkill: true, logo: null },
+  svc: { public: true, branch: 'master', readme: '# svc', hasSkill: false, logo: null },
+  'secret-kit': { public: false, branch: 'master', readme: '機密', hasSkill: true, logo: null },
+};
+const packs = [
+  { id: 'one', name: '一號', solves: '做一號。', kits: [{ name: 'a-kit', role: '甲角色' }, { name: 'B-Kit', role: '乙角色' }], steps: ['先 `a()` 再說', '第二步 <i>'] },
+  { id: 'two', name: '二號', solves: '做二號。', kits: [{ name: 'a-kit', role: '甲' }, { name: 'svc', role: '服務' }], steps: [] },
+  { id: 'three', name: '三號', solves: '做三號。', kits: [{ name: 'secret-kit', role: '密' }], steps: [] },
+];
+const model = buildModel({ registry, packs, repos, asOf: '2026-11-14' });
+const files = renderSite(model, copy, { css: 'body{}', js: '/* js */' });
+const byPath = new Map(files.map((f) => [f.path, f.content]));
+const html = (p) => byPath.get(p);
+const pages = files.filter((f) => f.path.endsWith('.html'));
+
+test('the site has a home page, one page per ready pack, one per public kit, and its assets', () => {
+  assert.deepStrictEqual([...byPath.keys()].sort(), [
+    'assets/app.js',
+    'assets/logos/a-kit.svg',
+    'assets/style.css',
+    'index.html',
+    'kits/a-kit/index.html',
+    'kits/b-kit/index.html',
+    'kits/svc/index.html',
+    'packs/one/index.html',
+  ]);
+});
+
+test('every internal link and asset reference resolves to a generated file', () => {
+  for (const page of pages) {
+    const refs = [...page.content.matchAll(/(?:href|src)="([^"]+)"/g)].map((m) => m[1]);
+    for (const ref of refs) {
+      if (/^(https?:|#|mailto:)/.test(ref)) continue;
+      assert.ok(!ref.startsWith('/'), `${page.path}: ${ref} is root-absolute; the site lives under a sub-path`);
+      const target = path.posix.normalize(path.posix.join(path.posix.dirname(page.path), ref.split('#')[0]));
+      assert.ok(byPath.has(target), `${page.path}: broken link ${ref} → ${target}`);
+    }
+  }
+});
+
+test('every page is a Traditional Chinese document with exactly one h1', () => {
+  for (const page of pages) {
+    assert.ok(page.content.startsWith('<!doctype html>'), page.path);
+    assert.ok(page.content.includes('<html lang="zh-Hant">'), page.path);
+    assert.strictEqual((page.content.match(/<h1[\s>]/g) || []).length, 1, `${page.path} h1 count`);
+  }
+});
+
+test('the home page shows ready packs as links and pending packs with what is missing', () => {
+  const home = html('index.html');
+  assert.ok(home.includes(copy.home.title));
+  assert.ok(home.includes('href="packs/one/index.html"'));
+  assert.ok(home.includes('二號'));
+  assert.ok(home.includes('svc'));
+  assert.ok(!home.includes('packs/two/'));
+});
+
+test('nothing private appears anywhere on the site', () => {
+  for (const f of files) {
+    assert.ok(!f.content.includes('secret-kit'), `${f.path} names a private kit`);
+    assert.ok(!f.content.includes('機密'), `${f.path} carries private content`);
+  }
+});
+
+test('a pack page carries the command, the AI prompt, the steps and its members', () => {
+  const page = html('packs/one/index.html');
+  const pack = model.packs[0];
+  assert.ok(page.includes(escapeHtml(pack.addCommand)));
+  assert.ok(page.includes(`data-copy="${escapeHtml(pack.prompt)}"`));
+  assert.ok(page.includes('先 <code>a()</code> 再說'));
+  assert.ok(page.includes('第二步 &lt;i&gt;'));
+  assert.ok(page.includes('甲角色') && page.includes('乙角色'));
+  assert.ok(page.includes('href="../../kits/a-kit/index.html"'));
+});
+
+test('a kit page shows its install line, packs, skill link and README without the duplicate title', () => {
+  const page = html('kits/a-kit/index.html');
+  assert.ok(page.includes('npm i github:Jeffrey0117/a-kit'));
+  assert.ok(page.includes('href="../../packs/one/index.html"'));
+  assert.ok(page.includes('href="https://github.com/Jeffrey0117/a-kit/blob/master/SKILL.md"'));
+  assert.ok(page.includes('甲的說明 <code>code</code>'));
+  assert.ok(!page.includes('a-kit 標題'));
+  assert.ok(page.includes('href="https://github.com/Jeffrey0117/a-kit/blob/master/docs/x.md"'));
+  assert.ok(page.includes('src="../../assets/logos/a-kit.svg"'));
+});
+
+test('a kit without a skill does not link to one', () => {
+  assert.ok(!html('kits/svc/index.html').includes('SKILL.md'));
+});
+
+test('registry text is escaped wherever it is printed', () => {
+  for (const p of ['index.html', 'kits/a-kit/index.html', 'packs/one/index.html']) {
+    assert.ok(html(p).includes('甲功能 &lt;b&gt;粗&lt;/b&gt;'), p);
+    assert.ok(!html(p).includes('<b>粗</b>'), p);
+  }
+});
+
+test('a kit with an empty README still gets a page', () => {
+  assert.ok(html('kits/b-kit/index.html').includes('乙元件'));
+});
