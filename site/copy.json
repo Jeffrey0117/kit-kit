@@ -30,7 +30,12 @@
     "howTitle": "兩種拿法",
     "howLede": "每個套組頁都有這兩顆按鈕。下面是「{pack}」套組的樣子。",
     "kitsTitle": "全部 kit",
-    "kitsLede": "不想整包拿，也可以一個一個拿。"
+    "kitsLede": "不想整包拿，也可以一個一個拿。",
+    "kitsMore": "看每個 kit 的介紹"
+  },
+  "kits": {
+    "title": "全部 kit",
+    "lede": "每個 kit 都能單獨拿。點進去有說明，有附範例的可以直接看程式。"
   },
   "ways": {
     "commandTitle": "複製指令",
@@ -49,6 +54,14 @@
   "kit": {
     "installTitle": "安裝",
     "hasSkill": "附打法",
+    "hasExample": "附範例",
+    "tabReadme": "說明",
+    "tabExample": "範例",
+    "exampleTitle": "範例",
+    "exampleLede": "repo 裡的 example.js，整份照登。",
+    "exampleSource": "在 GitHub 上看",
+    "version": "版本",
+    "updated": "更新",
     "skillLink": "看打法",
     "inPacks": "所屬套組",
     "repo": "原始碼",

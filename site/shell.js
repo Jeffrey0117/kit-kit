@@ -35,7 +35,7 @@ function header({ root, model, copy, hasSidebar }) {
     <button type="button" class="search-btn" data-search-open>${ICONS.search}<span>${e(copy.nav.search)}</span><kbd>Ctrl K</kbd></button>
     <nav class="links" aria-label="${e(copy.nav.label)}">
       <a href="${root}index.html#packs">${e(copy.nav.packs)}</a>
-      <a href="${root}index.html#kits">${e(copy.nav.kits)}</a>
+      <a href="${root}kits/index.html">${e(copy.nav.kits)}</a>
       <a href="${github}">${e(copy.nav.github)}</a>
     </nav>
     <button type="button" class="icon-btn" data-theme-toggle aria-label="${e(copy.nav.theme)}">${ICONS.theme}</button>
@@ -47,10 +47,11 @@ function sideLink(href, label, isCurrent, mono) {
   return `<li><a${mono ? ' class="mono"' : ''} href="${href}"${isCurrent ? ' aria-current="page"' : ''}>${e(label)}</a></li>`;
 }
 
-// current: 'pack:<id>' 或 'kit:<slug>'
+// current: 'pack:<id>'、'kit:<slug>' 或 'kits'（總覽頁）
 function sidebar({ root, model, copy, current }) {
   const packs = model.packs.filter((p) => p.ready);
   const groups = [
+    `<ul>${sideLink(`${root}kits/index.html`, copy.kits.title, current === 'kits', false)}</ul>`,
     packs.length ? `<p class="side-title">${e(copy.nav.packs)}</p>
     <ul>${packs.map((p) => sideLink(packHref(root, p), p.name, current === `pack:${p.id}`, false)).join('')}</ul>` : '',
     ...TYPE_ORDER.map((type) => {

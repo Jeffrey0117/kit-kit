@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert');
 const { fetchRepos } = require('../site/fetch');
-const { scanLeaks, withholdReadmes, parseDenyList, requireDenyList, blockedRepoUrls } = require('../site/build');
+const { scanLeaks, withholdReadmes, withholdExamples, parseDenyList, requireDenyList, blockedRepoUrls } = require('../site/build');
 
 // 假的 GitHub：記下被要了哪些網址
 function fakeGitHub({ repoList, files }) {
@@ -40,13 +40,54 @@ const NAMES = ['open-kit', 'main-kit', 'closed-kit', 'missing-kit'];
 test('fetchRepos returns public repos with README, skill flag and logo', async () => {
   const { fetchImpl } = fakeGitHub({ repoList, files });
   const repos = await fetchRepos('me', NAMES, { fetchImpl });
-  assert.deepStrictEqual(repos['open-kit'], { public: true, branch: 'master', readme: '# open', hasSkill: true, logo: '<svg/>' });
+  assert.deepStrictEqual(repos['open-kit'], { public: true, branch: 'master', readme: '# open', hasSkill: true, logo: '<svg/>', example: '', version: null, updated: null });
+});
+
+test('fetchRepos also brings the example file, the package version and the last push date', async () => {
+  const list = [{ name: 'open-kit', private: false, default_branch: 'master', pushed_at: '2026-11-10T08:30:00Z' }];
+  const more = {
+    ...files,
+    [`${RAW}/open-kit/master/example.js`]: 'const kit = require("./index");',
+    [`${RAW}/open-kit/master/package.json`]: '{"name":"open-kit","version":"1.4.0"}',
+  };
+  const { fetchImpl } = fakeGitHub({ repoList: list, files: more });
+  const repo = (await fetchRepos('me', NAMES, { fetchImpl }))['open-kit'];
+  assert.strictEqual(repo.example, 'const kit = require("./index");');
+  assert.strictEqual(repo.version, '1.4.0');
+  assert.strictEqual(repo.updated, '2026-11-10');
+});
+
+test('fetchRepos ignores a package.json it cannot read or a version that is not a plain version', async () => {
+  const version = async (body) => {
+    const { fetchImpl } = fakeGitHub({ repoList, files: { ...files, [`${RAW}/open-kit/master/package.json`]: body } });
+    return (await fetchRepos('me', NAMES, { fetchImpl }))['open-kit'].version;
+  };
+  assert.strictEqual(await version('{ not json'), null);
+  assert.strictEqual(await version('{"version":"<b>1</b>"}'), null);
+  assert.strictEqual(await version('{"version":5}'), null);
+});
+
+test('withholdExamples blanks an example that carries a denied term, an address or a key marker', () => {
+  const base = { public: true, branch: 'master', readme: '# r', hasSkill: true, logo: null };
+  const repos = {
+    clean: { ...base, example: 'listen(3000, "127.0.0.1")' },
+    host: { ...base, example: 'fetch("https://api.Private-Host.example/x")' },
+    addr: { ...base, example: 'connect("10.1.2.3")' },
+    key: { ...base, example: ['const k = "-----BEGIN', 'PRIVATE', 'KEY-----"'].join(' ') },
+    none: { ...base, example: '' },
+  };
+  const out = withholdExamples(repos, ['private-host.example']);
+  assert.deepStrictEqual(out.withheld, ['host', 'addr', 'key']);
+  assert.strictEqual(out.repos.clean.example, 'listen(3000, "127.0.0.1")');
+  for (const name of out.withheld) assert.strictEqual(out.repos[name].example, '');
+  assert.strictEqual(out.repos.host.readme, '# r');
+  assert.ok(repos.host.example.includes('Private-Host'), 'input must not be mutated');
 });
 
 test('fetchRepos uses each repo default branch and tolerates missing files', async () => {
   const { fetchImpl } = fakeGitHub({ repoList, files });
   const repos = await fetchRepos('me', NAMES, { fetchImpl });
-  assert.deepStrictEqual(repos['main-kit'], { public: true, branch: 'main', readme: '# main', hasSkill: false, logo: null });
+  assert.deepStrictEqual(repos['main-kit'], { public: true, branch: 'main', readme: '# main', hasSkill: false, logo: null, example: '', version: null, updated: null });
 });
 
 test('fetchRepos never requests a file from a private repo and does not return it', async () => {

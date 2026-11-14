@@ -16,7 +16,7 @@ const registry = {
   ],
 };
 const repos = {
-  'a-kit': { public: true, branch: 'master', readme: '# a-kit 標題\n\n甲的說明 `code`\n\n[文件](docs/x.md)', hasSkill: true, logo: '<svg xmlns="http://www.w3.org/2000/svg"/>' },
+  'a-kit': { public: true, branch: 'master', readme: '# a-kit 標題\n\n甲的說明 `code`\n\n[文件](docs/x.md)', hasSkill: true, logo: '<svg xmlns="http://www.w3.org/2000/svg"/>', example: 'const a = require("a-kit"); // <跑>', version: '1.2.0', updated: '2026-11-10' },
   'B-Kit': { public: true, branch: 'main', readme: '', hasSkill: true, logo: null },
   svc: { public: true, branch: 'master', readme: '# svc', hasSkill: false, logo: null },
   'secret-kit': { public: false, branch: 'master', readme: '機密', hasSkill: true, logo: null },
@@ -39,8 +39,10 @@ test('the site has a home page, one page per ready pack, one per public kit, and
     'assets/search.js',
     'assets/style.css',
     'index.html',
+    'kits/a-kit/example/index.html',
     'kits/a-kit/index.html',
     'kits/b-kit/index.html',
+    'kits/index.html',
     'kits/svc/index.html',
     'packs/one/index.html',
   ]);
@@ -119,6 +121,42 @@ test('a kit with an empty README still gets a page', () => {
   assert.ok(html('kits/b-kit/index.html').includes('乙元件'));
 });
 
+test('the kit overview page introduces every public kit and links to its page', () => {
+  const page = html('kits/index.html');
+  for (const slug of ['a-kit', 'b-kit', 'svc']) assert.ok(page.includes(`href="${slug}/index.html"`), slug);
+  assert.ok(page.includes('甲的說明 code'), 'the README intro is shown');
+  assert.ok(page.includes('乙元件') && page.includes('一個服務'));
+  assert.ok(page.includes(copy.types.component) && page.includes(copy.types.service));
+  assert.ok(page.includes('v1.2.0') && page.includes('2026-11-10'));
+  assert.ok(page.includes('href="../packs/one/index.html"'));
+});
+
+test('the site navigation and the home page lead to the kit overview', () => {
+  assert.ok(html('index.html').includes('href="kits/index.html"'));
+  assert.ok(html('kits/a-kit/index.html').includes('href="../../kits/index.html"'));
+  assert.ok(html('kits/index.html').includes('href="../kits/index.html" aria-current="page"'));
+});
+
+test('a kit with an example gets an example page, linked from its page', () => {
+  assert.ok(html('kits/a-kit/index.html').includes('href="example/index.html"'));
+  const page = html('kits/a-kit/example/index.html');
+  assert.ok(page.includes('<span class="tk-k">const</span>'));
+  assert.ok(page.includes('// &lt;跑&gt;') && !page.includes('<跑>'));
+  assert.ok(page.includes('href="../index.html"'));
+  assert.ok(page.includes('href="https://github.com/Jeffrey0117/a-kit/blob/master/example.js"'));
+  assert.ok(page.includes('href="../../../kits/a-kit/index.html" aria-current="page"'), 'the sidebar still marks the kit');
+});
+
+test('a kit without an example has no example page and no link to one', () => {
+  assert.strictEqual(html('kits/svc/example/index.html'), undefined);
+  assert.ok(!html('kits/svc/index.html').includes('example/index.html'));
+});
+
+test('a kit page shows the version and the last update when they are known', () => {
+  assert.ok(html('kits/a-kit/index.html').includes('v1.2.0') && html('kits/a-kit/index.html').includes('2026-11-10'));
+  assert.ok(!html('kits/svc/index.html').includes(copy.kit.version));
+});
+
 const sidebarOf = (page) => (page.match(/<aside class="sidebar"[\s\S]*?<\/aside>/) || [''])[0];
 const tocOf = (page) => (page.match(/<aside class="toc"[\s\S]*?<\/aside>/) || [''])[0];
 
@@ -126,6 +164,7 @@ test('pack and kit pages carry a sidebar of every ready pack and public kit, mar
   for (const p of ['packs/one/index.html', 'kits/a-kit/index.html', 'kits/svc/index.html']) {
     const side = sidebarOf(html(p));
     assert.ok(side.includes('href="../../packs/one/index.html"'), p);
+    assert.ok(side.includes('href="../../kits/index.html"'), `${p}: overview link`);
     assert.ok(!side.includes('packs/two/'), `${p}: a pack that is not ready has no page to link to`);
     for (const slug of ['a-kit', 'b-kit', 'svc']) assert.ok(side.includes(`href="../../kits/${slug}/index.html"`), `${p} → ${slug}`);
     assert.strictEqual((side.match(/aria-current="page"/g) || []).length, 1, p);
@@ -162,8 +201,9 @@ test('every page can open the search and switch the theme, and loads the search 
   for (const page of pages) {
     assert.ok(page.content.includes('data-search-open'), page.path);
     assert.ok(page.content.includes('data-theme-toggle'), page.path);
-    assert.ok(/<html lang="zh-Hant" data-root="(\.\.\/\.\.\/)?">/.test(page.content), page.path);
-    assert.ok(/src="(\.\.\/\.\.\/)?assets\/search\.js"/.test(page.content), page.path);
+    const up = '../'.repeat(page.path.split('/').length - 1);
+    assert.ok(page.content.includes(`<html lang="zh-Hant" data-root="${up}">`), page.path);
+    assert.ok(page.content.includes(`src="${up}assets/search.js"`), page.path);
   }
 });
 

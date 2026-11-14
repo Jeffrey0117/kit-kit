@@ -50,6 +50,16 @@ test('kits carry what the pages need', () => {
   assert.deepStrictEqual(b.packs, ['one']);
 });
 
+test('kits carry an intro from the README, the example, the version and the last update', () => {
+  const r2 = { ...repos, 'a-kit': repo({ readme: '# a-kit\n\n甲的一句介紹。\n\n## 用法', example: 'run()', version: '2.0.1', updated: '2026-11-10' }) };
+  const [a, b] = buildModel({ registry, packs, repos: r2, asOf: '2026-11-14' }).kits;
+  assert.strictEqual(a.intro, '甲的一句介紹。');
+  assert.strictEqual(a.example, 'run()');
+  assert.strictEqual(a.version, '2.0.1');
+  assert.strictEqual(a.updated, '2026-11-10');
+  assert.deepStrictEqual([b.intro, b.example, b.version, b.updated], ['', '', null, null]);
+});
+
 test('a pack is ready only when every member is public and has a skill', () => {
   const [one, two, three] = model().packs;
   assert.strictEqual(one.ready, true);

@@ -55,8 +55,8 @@ async function rawFile(url, fetchImpl, retryDelayMs) {
 
 async function fetchRepo(owner, meta, fetchImpl, retryDelayMs) {
   const base = `${RAW}/${owner}/${meta.name}/${meta.default_branch}`;
-  const [readme, skill, logo] = await Promise.all(
-    ['README.md', 'SKILL.md', 'logo.svg'].map((file) => rawFile(`${base}/${file}`, fetchImpl, retryDelayMs)),
+  const [readme, skill, logo, example, pkg] = await Promise.all(
+    ['README.md', 'SKILL.md', 'logo.svg', 'example.js', 'package.json'].map((file) => rawFile(`${base}/${file}`, fetchImpl, retryDelayMs)),
   );
   const safeLogo = logo && logo.includes('<svg') && !UNSAFE_SVG.test(logo);
   return {
@@ -65,7 +65,21 @@ async function fetchRepo(owner, meta, fetchImpl, retryDelayMs) {
     readme: readme || '',
     hasSkill: skill !== null,
     logo: safeLogo ? logo : null,
+    example: example || '',
+    version: packageVersion(pkg),
+    updated: /^\d{4}-\d{2}-\d{2}T/.test(meta.pushed_at || '') ? meta.pushed_at.slice(0, 10) : null,
   };
+}
+
+// package.json 的版本號；讀不懂或長得不像版本號就當作沒有
+function packageVersion(text) {
+  if (!text) return null;
+  try {
+    const { version } = JSON.parse(text);
+    return typeof version === 'string' && /^[0-9A-Za-z.+-]{1,32}$/.test(version) ? version : null;
+  } catch (err) {
+    return null;
+  }
 }
 
 async function fetchRepos(owner, names, { fetchImpl = fetch, token, retryDelayMs = RETRY_DELAY_MS } = {}) {

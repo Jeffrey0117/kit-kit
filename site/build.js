@@ -44,6 +44,17 @@ function withholdReadmes(repos, denyList) {
 }
 
 // 對外頁面不該出現的東西：名單裡的字詞（任何檔案）、IP 位址與私鑰（頁面）。
+// 範例檔會整份印在站上。裡面有名單裡的字詞、IP 位址或私鑰 → 這個 kit 不出範例頁，並回報是哪幾個。
+function withholdExamples(repos, denyList) {
+  const risky = (text) => scanLeaks([{ path: 'example.html', content: String(text) }], denyList).length > 0;
+  const withheld = Object.keys(repos).filter((name) => repos[name].example && risky(repos[name].example));
+  if (!withheld.length) return { repos, withheld };
+  const cleaned = Object.fromEntries(Object.entries(repos).map(([name, repo]) => (
+    [name, withheld.includes(name) ? { ...repo, example: '' } : repo]
+  )));
+  return { repos: cleaned, withheld };
+}
+
 // 上色之類的標記會把一串字切成好幾段，所以每個檔案看兩次：原樣，以及去掉標籤後讀者實際看到的字。
 function scanLeaks(files, denyList = []) {
   const views = files.map((file) => ({ path: file.path, texts: [file.content, file.content.replace(/<[^>]*>/g, '')] }));
@@ -85,7 +96,10 @@ async function build() {
   const denyList = parseDenyList(process.env.KITSITE_DENY);
   requireDenyList(denyList, process.env.KITSITE_REQUIRE_DENY);
   const fetched = await fetchRepos(registry.owner, registry.kits.map((k) => k.name), { token: process.env.GITHUB_TOKEN });
-  const { repos, withheld } = withholdReadmes(fetched, denyList);
+  const readmes = withholdReadmes(fetched, denyList);
+  const examples = withholdExamples(readmes.repos, denyList);
+  const repos = examples.repos;
+  const withheld = readmes.withheld;
   const model = buildModel({ registry, packs: loadPacks(), repos, asOf: today() });
   if (!model.kits.length) throw new Error('沒有抓到任何公開 kit，不產生空的站');
 
@@ -95,11 +109,12 @@ async function build() {
     throw new Error(`頁面裡有不該對外的內容，停止產生：\n${leaks.map((l) => `  ${l.path}: ${l.match}`).join('\n')}`);
   }
   writeSite(files, OUT);
-  return { model, files, withheld, guarded: denyList.length > 0 };
+  return { model, files, withheld, withheldExamples: examples.withheld, guarded: denyList.length > 0 };
 }
 
 if (require.main === module) {
-  build().then(({ model, files, withheld, guarded }) => {
+  build().then(({ model, files, withheld, withheldExamples, guarded }) => {
+    if (withheldExamples.length) process.stdout.write(`範例檔含不該對外的內容，沒有上站：${withheldExamples.join(', ')}\n`);
     const pending = model.packs.filter((p) => !p.ready).map((p) => p.id).join(', ') || '無';
     process.stdout.write(`_site/ 已產生：${files.length} 個檔案，${model.stats.kits} 個 kit，${model.stats.readyPacks} 個套組可用（整理中：${pending}）\n`);
     if (withheld.length) process.stdout.write(`README 含不公開字詞，沒有上站：${withheld.join(', ')}（去那個 repo 把 README 改掉就會恢復）\n`);
@@ -110,4 +125,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { build, scanLeaks, withholdReadmes, parseDenyList, requireDenyList, blockedRepoUrls };
+module.exports = { build, scanLeaks, withholdReadmes, withholdExamples, parseDenyList, requireDenyList, blockedRepoUrls };

@@ -49,6 +49,19 @@ Jeff 看了上線的站，說版面要「學 UnoCSS / Tailwind 那種網站」�
 站上多一個檔 `assets/search.js`（搜尋資料 + 比對函式）。搜尋資料只來自已過濾的 model，
 所以私有 kit 不會出現；它也跟其他檔案一樣要過不公開字詞檢查。
 
+## 追加：全部 kit 介紹更多、更多頁面
+
+Jeff 看完說「全部 kit 那邊可以介紹更多、更多頁面」。我的判斷（他沒逐項指定）：
+
+- 新增 `kits/index.html`「全部 kit」總覽頁：每個 kit 一張卡，有 logo、涵蓋範圍、README 開頭那段介紹
+  （`site/intro.js`，純文字、最多 180 字）、registry 關鍵字前 6 個、所屬套組、版本與最後更新日。
+  上方導覽與側欄第一項都連到這頁。
+- 每個有 `example.js` 的 kit 多一頁 `kits/<slug>/example/index.html`，整份上色照登；說明頁與範例頁用分頁切換。
+- 抓資料時多抓 `example.js`、`package.json`（只取版本號）與 repo 的最後 push 日期。
+- 範例檔含不公開字詞、IP 位址或私鑰標記 → 該 kit 不出範例頁（`withholdExamples`），不讓整個站發不出去。
+  代價：範例裡用假 IP 當示範的（例如 ratelimit-kit）也不會有範例頁。
+- 沒做：使用教學頁（那是要寫文案的內容，等 Jeff 給字）；SKILL.md 仍不上站。
+
 ## 邊界
 
 - 沒有 JavaScript：側欄、目錄、連結照常可用；搜尋鈕與深淺切換不作用。

@@ -1,6 +1,7 @@
 // registry + packs.json + 從 GitHub 抓到的 repo 資料 → 頁面要用的資料。純函式。
 // 不公開或抓不到的 repo 在這裡就被濾掉：名字、說明、README 都不會往下傳。
 const packsLib = require('../packs');
+const { readmeIntro } = require('./intro');
 
 function toKit(entry, repo, packIds) {
   return {
@@ -13,6 +14,10 @@ function toKit(entry, repo, packIds) {
     install: entry.install,
     branch: repo.branch,
     readme: repo.readme || '',
+    intro: readmeIntro(repo.readme),
+    example: repo.example || '',
+    version: repo.version || null,
+    updated: repo.updated || null,
     hasSkill: !!repo.hasSkill,
     logo: repo.logo || null,
     packs: packIds,

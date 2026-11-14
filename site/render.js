@@ -1,8 +1,9 @@
 // 資料模型 → 整個站的檔案清單 [{ path, content }]。純函式（樣式與腳本由呼叫端傳入）。
 const { escapeHtml: e } = require('./escape');
-const { renderMarkdown, renderInline } = require('./md');
+const { renderInline } = require('./md');
 const { layout, copyBox, kitHref, packHref, TYPE_ORDER } = require('./shell');
 const { buildSearchIndex, searchScript } = require('./search');
+const { kitPage, examplePage, kitsIndexPage } = require('./kit-pages');
 
 function ways(pack, copy) {
   return `<div class="ways">
@@ -105,7 +106,7 @@ ${lead ? `
   </section>
 ` : ''}
   <section id="kits">
-    <div class="sec-head"><h2>${e(copy.home.kitsTitle)}</h2><p>${e(copy.home.kitsLede)}</p></div>
+    <div class="sec-head"><h2>${e(copy.home.kitsTitle)}</h2><p>${e(copy.home.kitsLede)} <a href="kits/index.html">${e(copy.home.kitsMore)} →</a></p></div>
     ${kitGroups(model, root, copy)}
   </section>`;
   return layout({ root, title: `${copy.site.name} — ${copy.home.title}`, description: copy.site.description, body }, model, copy);
@@ -147,67 +148,13 @@ ${steps}
   return layout({ root, title: `${pack.name}套組 — ${copy.site.name}`, description: pack.solves, body, current: `pack:${pack.id}`, outline }, model, copy);
 }
 
-// README 的第一個大標題跟頁面標題重複，拿掉
-function dropTitle(md) {
-  const lines = String(md).split(/\r?\n/);
-  const i = lines.findIndex((l) => /^#\s+/.test(l) || /^\s*(```|~~~)/.test(l));
-  if (i < 0 || !/^#\s+/.test(lines[i])) return md;
-  return [...lines.slice(0, i), ...lines.slice(i + 1)].join('\n');
-}
-
-// 轉好的 README 裡的 h2、h3 → 本頁目錄。標籤裡的標記（<code> 之類）拿掉，只留字。
-function readmeOutline(html) {
-  return [...html.matchAll(/<h([23]) id="([^"]+)">([\s\S]*?)<\/h\1>/g)].map((m) => ({
-    level: Number(m[1]),
-    id: unescapeHtml(m[2]),
-    label: unescapeHtml(m[3].replace(/<[^>]+>/g, '')),
-  }));
-}
-
-function unescapeHtml(s) {
-  return s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
-}
-
-function kitPage(kit, model, copy, blockedUrls) {
-  const root = '../../';
-  const blob = `${kit.repo}/blob/${kit.branch}`;
-  const raw = `https://raw.githubusercontent.com/${model.owner}/${kit.name}/${kit.branch}`;
-  const packLinks = kit.packs.map((id) => model.packs.find((p) => p.id === id)).map((p) => (p.ready
-    ? `<a class="chip" href="${packHref(root, p)}">${e(p.name)}</a>`
-    : `<span class="chip dim">${e(p.name)}</span>`)).join('');
-  const readme = renderMarkdown(dropTitle(kit.readme), { repoUrl: blob, rawUrl: raw, blockedUrls });
-  const outline = [
-    { id: 'kk-install', label: copy.kit.installTitle, level: 2 },
-    { id: 'kk-readme', label: copy.kit.readmeTitle, level: 2 },
-    ...readmeOutline(readme).map((t) => ({ ...t, level: 3 })),
-  ];
-  const body = `<article class="doc">
-  <p class="crumb"><a href="${root}index.html#kits">${e(copy.kit.back)}</a> / ${e(copy.types[kit.type] || kit.type)}</p>
-  <div class="kit-title">
-    <h1>${e(kit.name)}</h1>
-    ${kit.logo ? `<img class="logo" src="${root}assets/logos/${kit.slug}.svg" alt="" width="56" height="56">` : ''}
-  </div>
-  <p class="lede">${e(kit.covers)}</p>
-  ${packLinks ? `<div class="meta"><span class="label">${e(copy.kit.inPacks)}</span><div class="chips">${packLinks}</div></div>` : ''}
-  <div class="cta">
-    <a class="btn primary" href="${e(kit.repo)}">${e(copy.kit.repo)}</a>
-    ${kit.hasSkill ? `<a class="btn ghost" href="${blob}/SKILL.md">${e(copy.kit.skillLink)}</a>` : ''}
-  </div>
-
-  <h2 id="kk-install">${e(copy.kit.installTitle)}</h2>
-  ${copyBox(kit.install, copy)}
-
-  <h2 id="kk-readme">${e(copy.kit.readmeTitle)}</h2>
-  <div class="prose">${readme || `<p>${e(copy.kit.noReadme)}</p>`}</div>
-</article>`;
-  return layout({ root, title: `${kit.name} — ${copy.site.name}`, description: kit.covers, body, current: `kit:${kit.slug}`, outline }, model, copy);
-}
-
 function renderSite(model, copy, assets) {
   const pages = [
     { path: 'index.html', content: homePage(model, copy) },
     ...model.packs.filter((p) => p.ready).map((p) => ({ path: `packs/${p.id}/index.html`, content: packPage(p, model, copy) })),
+    { path: 'kits/index.html', content: kitsIndexPage(model, copy) },
     ...model.kits.map((k) => ({ path: `kits/${k.slug}/index.html`, content: kitPage(k, model, copy, assets.blockedUrls || []) })),
+    ...model.kits.filter((k) => k.example).map((k) => ({ path: `kits/${k.slug}/example/index.html`, content: examplePage(k, model, copy) })),
   ];
   const logos = model.kits.filter((k) => k.logo).map((k) => ({ path: `assets/logos/${k.slug}.svg`, content: k.logo }));
   return [
