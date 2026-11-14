@@ -1,73 +1,8 @@
 // 資料模型 → 整個站的檔案清單 [{ path, content }]。純函式（樣式與腳本由呼叫端傳入）。
-const { escapeHtml: e, renderMarkdown, renderInline } = require('./md');
-
-const TYPE_ORDER = ['kit', 'component', 'template', 'service'];
-const FONTS = 'https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700;900&display=swap';
-
-const kitHref = (root, kit) => `${root}kits/${kit.slug}/index.html`;
-const packHref = (root, pack) => `${root}packs/${pack.id}/index.html`;
-const pad2 = (n) => String(n).padStart(2, '0');
-
-function layout({ root, title, description, body, model, copy }) {
-  const github = `https://github.com/${model.owner}/kit-kit`;
-  return `<!doctype html>
-<html lang="zh-Hant">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>${e(title)}</title>
-<meta name="description" content="${e(description)}">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="${FONTS}">
-<link rel="stylesheet" href="${root}assets/style.css">
-</head>
-<body>
-<div class="wrap">
-  <nav class="topbar" aria-label="網站">
-    <a class="brand" href="${root}index.html">${e(copy.nav.home)}</a>
-    <div class="links">
-      <a href="${root}index.html#packs">${e(copy.nav.packs)}</a>
-      <a href="${root}index.html#kits">${e(copy.nav.kits)}</a>
-      <a href="${github}">${e(copy.nav.github)}</a>
-    </div>
-  </nav>
-${body}
-  <footer>
-    <span>${e(copy.footer.source)} · ${e(copy.home.asOf)} ${e(model.asOf)}</span>
-    <span><a href="${github}">${e(model.owner)}/kit-kit</a> · ${e(copy.footer.license)}</span>
-  </footer>
-</div>
-<script src="${root}assets/app.js" defer></script>
-</body>
-</html>
-`;
-}
-
-function copyBox(text, copy, { wrap = false } = {}) {
-  return `<div class="copybox">
-  <pre${wrap ? ' class="wrap"' : ''}><code>${e(text)}</code></pre>
-  <button type="button" class="copy" data-copy="${e(text)}" data-done="${e(copy.copy.done)}">${e(copy.copy.button)}</button>
-</div>`;
-}
-
-// 主視覺物件：這一包的裝箱單
-function slip(pack, copy) {
-  const items = pack.members.map((m, i) => `
-      <li><span class="no">${pad2(i + 1)}</span><span class="k">${e(m.name)}</span><span class="r">${e(m.role)}</span></li>`).join('');
-  return `<div class="slip">
-    <div class="head"><span class="title">${e(copy.slip.title)}</span><span class="code">PACK / ${e(pack.id)}</span></div>
-    <div class="name">${e(pack.name)}</div>
-    <hr>
-    <ol class="items">${items}
-    </ol>
-    <hr>
-    <div class="row"><span>${e(copy.slip.skills)}</span><span>${pack.members.length} ${e(copy.slip.skillsUnit)}</span></div>
-    <div class="row"><span>${e(copy.slip.steps)}</span><span>${pack.steps.length} ${e(copy.slip.stepsUnit)}</span></div>
-    <hr>
-    <div class="cmd">$ ${e(pack.addCommand)}</div>
-  </div>`;
-}
+const { escapeHtml: e } = require('./escape');
+const { renderMarkdown, renderInline } = require('./md');
+const { layout, copyBox, kitHref, packHref, TYPE_ORDER } = require('./shell');
+const { buildSearchIndex, searchScript } = require('./search');
 
 function ways(pack, copy) {
   return `<div class="ways">
@@ -137,20 +72,17 @@ function homePage(model, copy) {
   const ready = shown.filter((p) => p.ready);
   const pending = shown.filter((p) => !p.ready);
   const lead = ready[0];
-  const body = `  <header class="hero">
-    <div>
-      <p class="eyebrow">${e(copy.home.eyebrow)}</p>
-      <h1>${e(copy.home.title)}</h1>
-      <p class="lede">${e(copy.home.lede)}</p>
-      <div class="facts">
-        <div class="fact"><b>${model.stats.readyPacks}</b><span>${e(copy.home.factPacks)}</span></div>
-        <div class="fact"><b>${model.stats.kits}</b><span>${e(copy.home.factKits)}</span></div>
-        <div class="fact"><b>${model.stats.withSkill}</b><span>${e(copy.home.factSkill)}</span></div>
-      </div>
-      <p class="asof">${e(copy.home.asOf)} ${e(model.asOf)}</p>
-      <div class="cta"><a class="btn primary" href="#packs">${e(copy.home.ctaPacks)}</a><a class="btn ghost" href="#kits">${e(copy.nav.kits)}</a></div>
+  const body = `  <header class="home-hero">
+    <p class="eyebrow">${e(copy.home.eyebrow)}</p>
+    <h1>${e(copy.home.title)}</h1>
+    <p class="lede">${e(copy.home.lede)}</p>
+    ${lead ? `<div class="hero-cmd">${copyBox(lead.addCommand, copy)}</div>` : ''}
+    <div class="cta"><a class="btn primary" href="#packs">${e(copy.home.ctaPacks)}</a><a class="btn ghost" href="#kits">${e(copy.nav.kits)}</a></div>
+    <div class="facts">
+      <div class="fact"><b>${model.stats.readyPacks}</b><span>${e(copy.home.factPacks)}</span></div>
+      <div class="fact"><b>${model.stats.kits}</b><span>${e(copy.home.factKits)}</span></div>
+      <div class="fact"><b>${model.stats.withSkill}</b><span>${e(copy.home.factSkill)}</span></div>
     </div>
-    ${lead ? `<div class="object-col">${slip(lead, copy)}</div>` : ''}
   </header>
 
   <section id="packs">
@@ -176,46 +108,43 @@ ${lead ? `
     <div class="sec-head"><h2>${e(copy.home.kitsTitle)}</h2><p>${e(copy.home.kitsLede)}</p></div>
     ${kitGroups(model, root, copy)}
   </section>`;
-  return layout({ root, title: `${copy.site.name} — ${copy.home.title}`, description: copy.site.description, body, model, copy });
+  return layout({ root, title: `${copy.site.name} — ${copy.home.title}`, description: copy.site.description, body }, model, copy);
 }
 
 function packPage(pack, model, copy) {
   const root = '../../';
-  const steps = pack.steps.map((s) => `<li><span>${renderInline(s)}</span></li>`).join('\n      ');
   const members = pack.members.map((m) => `<a class="member" href="${kitHref(root, m)}">
-        <h3>${e(m.name)}</h3>
-        <p class="role">${e(m.role)}</p>
-        <p>${e(m.covers)}</p>
+        <span class="mname">${e(m.name)}</span>
+        <span class="role">${e(m.role)}</span>
+        <span class="covers">${e(m.covers)}</span>
       </a>`).join('\n      ');
-  const body = `  <header class="hero">
-    <div>
-      <p class="eyebrow"><a href="${root}index.html#packs">${e(copy.pack.back)}</a> / ${e(copy.pack.eyebrow)}</p>
-      <h1>${e(pack.name)}</h1>
-      <p class="lede">${e(pack.solves)}</p>
-      <div class="hero-copy">${copyBox(pack.addCommand, copy)}</div>
-    </div>
-    <div class="object-col">${slip(pack, copy)}</div>
-  </header>
+  const steps = pack.steps.length ? `
+  <h2 id="kk-steps">${e(copy.pack.stepsTitle)}</h2>
+  <p class="sec-lede">${e(copy.pack.stepsLede)}</p>
+  <ol class="flow">
+    ${pack.steps.map((s) => `<li><span>${renderInline(s)}</span></li>`).join('\n    ')}
+  </ol>` : '';
+  const outline = [
+    { id: 'kk-members', label: copy.pack.membersTitle, level: 2 },
+    ...(pack.steps.length ? [{ id: 'kk-steps', label: copy.pack.stepsTitle, level: 2 }] : []),
+    { id: 'kk-ways', label: copy.pack.waysTitle, level: 2 },
+  ];
+  const body = `<article class="doc">
+  <p class="crumb"><a href="${root}index.html#packs">${e(copy.pack.back)}</a> / ${e(copy.pack.eyebrow)}</p>
+  <h1>${e(pack.name)}</h1>
+  <p class="lede">${e(pack.solves)}</p>
+  <div class="doc-cmd">${copyBox(pack.addCommand, copy)}</div>
 
-  <section>
-    <div class="sec-head"><h2>${e(copy.pack.stepsTitle)}</h2><p>${e(copy.pack.stepsLede)}</p></div>
-    <ol class="flow">
-      ${steps}
-    </ol>
-  </section>
-
-  <section>
-    <div class="sec-head"><h2>${e(copy.pack.waysTitle)}</h2></div>
-    ${ways(pack, copy)}
-  </section>
-
-  <section>
-    <div class="sec-head"><h2>${e(copy.pack.membersTitle)}</h2></div>
-    <div class="members">
+  <h2 id="kk-members">${e(copy.pack.membersTitle)}</h2>
+  <div class="members">
       ${members}
-    </div>
-  </section>`;
-  return layout({ root, title: `${pack.name}套組 — ${copy.site.name}`, description: pack.solves, body, model, copy });
+  </div>
+${steps}
+
+  <h2 id="kk-ways">${e(copy.pack.waysTitle)}</h2>
+  ${ways(pack, copy)}
+</article>`;
+  return layout({ root, title: `${pack.name}套組 — ${copy.site.name}`, description: pack.solves, body, current: `pack:${pack.id}`, outline }, model, copy);
 }
 
 // README 的第一個大標題跟頁面標題重複，拿掉
@@ -226,6 +155,19 @@ function dropTitle(md) {
   return [...lines.slice(0, i), ...lines.slice(i + 1)].join('\n');
 }
 
+// 轉好的 README 裡的 h2、h3 → 本頁目錄。標籤裡的標記（<code> 之類）拿掉，只留字。
+function readmeOutline(html) {
+  return [...html.matchAll(/<h([23]) id="([^"]+)">([\s\S]*?)<\/h\1>/g)].map((m) => ({
+    level: Number(m[1]),
+    id: unescapeHtml(m[2]),
+    label: unescapeHtml(m[3].replace(/<[^>]+>/g, '')),
+  }));
+}
+
+function unescapeHtml(s) {
+  return s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+}
+
 function kitPage(kit, model, copy, blockedUrls) {
   const root = '../../';
   const blob = `${kit.repo}/blob/${kit.branch}`;
@@ -234,30 +176,31 @@ function kitPage(kit, model, copy, blockedUrls) {
     ? `<a class="chip" href="${packHref(root, p)}">${e(p.name)}</a>`
     : `<span class="chip dim">${e(p.name)}</span>`)).join('');
   const readme = renderMarkdown(dropTitle(kit.readme), { repoUrl: blob, rawUrl: raw, blockedUrls });
-  const body = `  <header class="kit-head">
-    <div>
-      <p class="eyebrow"><a href="${root}index.html#kits">${e(copy.kit.back)}</a> / ${e(copy.types[kit.type] || kit.type)}</p>
-      <h1>${e(kit.name)}</h1>
-      <p class="lede">${e(kit.covers)}</p>
-      ${packLinks ? `<div class="meta"><span class="label">${e(copy.kit.inPacks)}</span><div class="chips">${packLinks}</div></div>` : ''}
-      <div class="cta">
-        <a class="btn primary" href="${e(kit.repo)}">${e(copy.kit.repo)}</a>
-        ${kit.hasSkill ? `<a class="btn ghost" href="${blob}/SKILL.md">${e(copy.kit.skillLink)}</a>` : ''}
-      </div>
-    </div>
-    ${kit.logo ? `<img class="logo" src="${root}assets/logos/${kit.slug}.svg" alt="" width="120" height="120">` : ''}
-  </header>
+  const outline = [
+    { id: 'kk-install', label: copy.kit.installTitle, level: 2 },
+    { id: 'kk-readme', label: copy.kit.readmeTitle, level: 2 },
+    ...readmeOutline(readme).map((t) => ({ ...t, level: 3 })),
+  ];
+  const body = `<article class="doc">
+  <p class="crumb"><a href="${root}index.html#kits">${e(copy.kit.back)}</a> / ${e(copy.types[kit.type] || kit.type)}</p>
+  <div class="kit-title">
+    <h1>${e(kit.name)}</h1>
+    ${kit.logo ? `<img class="logo" src="${root}assets/logos/${kit.slug}.svg" alt="" width="56" height="56">` : ''}
+  </div>
+  <p class="lede">${e(kit.covers)}</p>
+  ${packLinks ? `<div class="meta"><span class="label">${e(copy.kit.inPacks)}</span><div class="chips">${packLinks}</div></div>` : ''}
+  <div class="cta">
+    <a class="btn primary" href="${e(kit.repo)}">${e(copy.kit.repo)}</a>
+    ${kit.hasSkill ? `<a class="btn ghost" href="${blob}/SKILL.md">${e(copy.kit.skillLink)}</a>` : ''}
+  </div>
 
-  <section>
-    <div class="sec-head"><h2>${e(copy.kit.installTitle)}</h2></div>
-    ${copyBox(kit.install, copy)}
-  </section>
+  <h2 id="kk-install">${e(copy.kit.installTitle)}</h2>
+  ${copyBox(kit.install, copy)}
 
-  <section>
-    <div class="sec-head"><h2>${e(copy.kit.readmeTitle)}</h2></div>
-    <div class="prose">${readme || `<p>${e(copy.kit.noReadme)}</p>`}</div>
-  </section>`;
-  return layout({ root, title: `${kit.name} — ${copy.site.name}`, description: kit.covers, body, model, copy });
+  <h2 id="kk-readme">${e(copy.kit.readmeTitle)}</h2>
+  <div class="prose">${readme || `<p>${e(copy.kit.noReadme)}</p>`}</div>
+</article>`;
+  return layout({ root, title: `${kit.name} — ${copy.site.name}`, description: kit.covers, body, current: `kit:${kit.slug}`, outline }, model, copy);
 }
 
 function renderSite(model, copy, assets) {
@@ -271,6 +214,7 @@ function renderSite(model, copy, assets) {
     ...pages,
     { path: 'assets/style.css', content: assets.css },
     { path: 'assets/app.js', content: assets.js },
+    { path: 'assets/search.js', content: searchScript(buildSearchIndex(model, copy), assets.search || '') },
     ...logos,
   ];
 }

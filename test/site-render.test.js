@@ -27,7 +27,7 @@ const packs = [
   { id: 'three', name: '三號', solves: '做三號。', kits: [{ name: 'secret-kit', role: '密' }], steps: [] },
 ];
 const model = buildModel({ registry, packs, repos, asOf: '2026-11-14' });
-const files = renderSite(model, copy, { css: 'body{}', js: '/* js */' });
+const files = renderSite(model, copy, { css: 'body{}', js: '/* js */', search: '/* search client */' });
 const byPath = new Map(files.map((f) => [f.path, f.content]));
 const html = (p) => byPath.get(p);
 const pages = files.filter((f) => f.path.endsWith('.html'));
@@ -36,6 +36,7 @@ test('the site has a home page, one page per ready pack, one per public kit, and
   assert.deepStrictEqual([...byPath.keys()].sort(), [
     'assets/app.js',
     'assets/logos/a-kit.svg',
+    'assets/search.js',
     'assets/style.css',
     'index.html',
     'kits/a-kit/index.html',
@@ -60,7 +61,7 @@ test('every internal link and asset reference resolves to a generated file', () 
 test('every page is a Traditional Chinese document with exactly one h1', () => {
   for (const page of pages) {
     assert.ok(page.content.startsWith('<!doctype html>'), page.path);
-    assert.ok(page.content.includes('<html lang="zh-Hant">'), page.path);
+    assert.ok(page.content.includes('<html lang="zh-Hant" '), page.path);
     assert.strictEqual((page.content.match(/<h1[\s>]/g) || []).length, 1, `${page.path} h1 count`);
   }
 });
@@ -116,6 +117,60 @@ test('registry text is escaped wherever it is printed', () => {
 
 test('a kit with an empty README still gets a page', () => {
   assert.ok(html('kits/b-kit/index.html').includes('乙元件'));
+});
+
+const sidebarOf = (page) => (page.match(/<aside class="sidebar"[\s\S]*?<\/aside>/) || [''])[0];
+const tocOf = (page) => (page.match(/<aside class="toc"[\s\S]*?<\/aside>/) || [''])[0];
+
+test('pack and kit pages carry a sidebar of every ready pack and public kit, marking the current page', () => {
+  for (const p of ['packs/one/index.html', 'kits/a-kit/index.html', 'kits/svc/index.html']) {
+    const side = sidebarOf(html(p));
+    assert.ok(side.includes('href="../../packs/one/index.html"'), p);
+    assert.ok(!side.includes('packs/two/'), `${p}: a pack that is not ready has no page to link to`);
+    for (const slug of ['a-kit', 'b-kit', 'svc']) assert.ok(side.includes(`href="../../kits/${slug}/index.html"`), `${p} → ${slug}`);
+    assert.strictEqual((side.match(/aria-current="page"/g) || []).length, 1, p);
+  }
+  assert.ok(sidebarOf(html('kits/svc/index.html')).includes('href="../../kits/svc/index.html" aria-current="page"'));
+  assert.ok(sidebarOf(html('packs/one/index.html')).includes('href="../../packs/one/index.html" aria-current="page"'));
+});
+
+test('the home page has no sidebar and no page outline', () => {
+  assert.strictEqual(sidebarOf(html('index.html')), '');
+  assert.strictEqual(tocOf(html('index.html')), '');
+});
+
+test('every outline entry points at a heading that exists on that page', () => {
+  for (const page of pages) {
+    const anchors = [...tocOf(page.content).matchAll(/href="#([^"]+)"/g)].map((m) => m[1]);
+    for (const id of anchors) assert.ok(page.content.includes(`id="${id}"`), `${page.path}: #${id}`);
+  }
+  assert.ok(tocOf(html('packs/one/index.html')).includes(copy.pack.stepsTitle));
+});
+
+test('a kit page outline lists the README headings, with markup stripped from the labels', () => {
+  const r2 = { ...repos, 'a-kit': { ...repos['a-kit'], readme: '# a-kit\n\n## 接線 `create()`\n\n### 細節\n\n#### 太深' } };
+  const m2 = buildModel({ registry, packs, repos: r2, asOf: '2026-11-14' });
+  const page = renderSite(m2, copy, { css: '', js: '', search: '' }).find((f) => f.path === 'kits/a-kit/index.html').content;
+  const toc = tocOf(page);
+  assert.ok(toc.includes('href="#接線-create"') && toc.includes('>接線 create()</a>'));
+  assert.ok(toc.includes('href="#細節"'));
+  assert.ok(!toc.includes('太深'));
+  assert.ok(!toc.includes('<code>'));
+});
+
+test('every page can open the search and switch the theme, and loads the search data', () => {
+  for (const page of pages) {
+    assert.ok(page.content.includes('data-search-open'), page.path);
+    assert.ok(page.content.includes('data-theme-toggle'), page.path);
+    assert.ok(/<html lang="zh-Hant" data-root="(\.\.\/\.\.\/)?">/.test(page.content), page.path);
+    assert.ok(/src="(\.\.\/\.\.\/)?assets\/search\.js"/.test(page.content), page.path);
+  }
+});
+
+test('the search data file carries the index and the client code', () => {
+  const js = html('assets/search.js');
+  assert.ok(js.includes('kits/a-kit/index.html') && js.includes('packs/one/index.html'));
+  assert.ok(js.includes('/* search client */'));
 });
 
 test('a README link to a blocked repo is rendered without the link', () => {

@@ -8,6 +8,7 @@ function toKit(entry, repo, packIds) {
     slug: entry.name.toLowerCase(),
     covers: entry.covers || '',
     type: entry.type || 'kit',
+    keywords: entry.keywords || [],
     repo: entry.repo,
     install: entry.install,
     branch: repo.branch,

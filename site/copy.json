@@ -3,7 +3,15 @@
     "name": "kit-kit",
     "description": "做一件事要用的幾個 kit、接線順序與打法，包成套組。一行指令裝進專案，或整段貼給 AI 讓它接。"
   },
-  "nav": { "home": "kit-kit", "packs": "套組", "kits": "全部 kit", "github": "GitHub" },
+  "nav": { "home": "kit-kit", "packs": "套組", "kits": "全部 kit", "github": "GitHub", "search": "搜尋", "theme": "切換深色／淺色", "menu": "開關側欄", "label": "網站" },
+  "sidebar": { "label": "所有套組與 kit" },
+  "toc": { "title": "本頁內容" },
+  "search": {
+    "placeholder": "找套組或 kit，例如：金流、上傳、登入",
+    "empty": "找不到符合的套組或 kit",
+    "hint": "↑↓ 選擇　Enter 前往　Esc 關閉",
+    "kindPack": "套組"
+  },
   "home": {
     "eyebrow": "KIT-KIT",
     "title": "整包抽來用",
@@ -53,13 +61,6 @@
     "component": "介面元件",
     "template": "範本",
     "service": "自架服務"
-  },
-  "slip": {
-    "title": "裝箱單",
-    "skills": "打法",
-    "skillsUnit": "份",
-    "steps": "接線",
-    "stepsUnit": "步"
   },
   "copy": { "button": "複製", "done": "已複製" },
   "footer": { "source": "這個站由 kit-kit 的 registry 自動產生", "license": "MIT" }

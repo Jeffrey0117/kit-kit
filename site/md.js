@@ -1,10 +1,8 @@
 // markdown → HTML，只做各 kit README 用得到的語法。零依賴。
 // 安全原則：所有文字先跳脫；原始 HTML 區塊整塊丟掉；連結只放行 http(s)、相對路徑、#錨點。
 
-const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, (c) => ESC[c]);
-}
+const { escapeHtml } = require('./escape');
+const { highlight } = require('./highlight');
 
 const RE = {
   fence: /^\s*(```|~~~)/,
@@ -71,10 +69,33 @@ function startsBlock(lines, i) {
 
 function readFence(lines, start) {
   const marker = lines[start].match(RE.fence)[1];
+  const info = lines[start].trim().slice(marker.length).trim().split(/\s+/)[0].toLowerCase();
+  const lang = /^[a-z0-9+-]+$/.test(info) ? info : '';
   const body = [];
   let i = start + 1;
   while (i < lines.length && !lines[i].trim().startsWith(marker)) body.push(lines[i++]);
-  return { html: `<pre><code>${escapeHtml(body.join('\n'))}</code></pre>`, next: i + 1 };
+  const code = body.join('\n');
+  const html = lang
+    ? `<pre data-lang="${lang}"><code class="language-${lang}">${highlight(code, lang)}</code></pre>`
+    : `<pre><code>${escapeHtml(code)}</code></pre>`;
+  return { html, next: i + 1 };
+}
+
+// 標題文字 → 可以當錨點的 id（本頁目錄要連過來）。同一頁重複的標題加上 -2、-3。
+function slugify(text) {
+  return String(text)
+    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s_-]/gu, '')
+    .trim()
+    .replace(/\s+/g, '-');
+}
+
+function headingId(text, used) {
+  const base = slugify(text) || 'section';
+  const count = (used.get(base) || 0) + 1;
+  used.set(base, count);
+  return count === 1 ? base : `${base}-${count}`;
 }
 
 function readTable(lines, start, ctx) {
@@ -154,7 +175,8 @@ function readBlock(lines, i, ctx) {
   const h = line.match(RE.heading);
   if (h) {
     const level = Math.min(h[1].length + (ctx.headingOffset || 0), 6);
-    return { html: `<h${level}>${inline(h[2], ctx)}</h${level}>`, next: i + 1 };
+    const id = headingId(h[2], ctx.usedIds);
+    return { html: `<h${level} id="${escapeHtml(id)}">${inline(h[2], ctx)}</h${level}>`, next: i + 1 };
   }
   if (RE.rule.test(line)) return { html: '<hr>', next: i + 1 };
   if (isTableStart(lines, i)) return readTable(lines, i, ctx);
@@ -179,7 +201,8 @@ function renderMarkdown(md, ctx = {}) {
   if (!md) return '';
   // HTML 註解在 GitHub 上看不到，作者會當成私下的備註，所以整段拿掉（沒收尾的拿到檔尾）
   const visible = String(md).replace(/<!--[\s\S]*?(-->|$)/g, '');
-  return blocks(visible.replace(/\r\n?/g, '\n').replace(/\t/g, '    ').split('\n'), ctx);
+  // usedIds 只活在這一次轉換裡，用來記這一頁已經發過哪些標題 id
+  return blocks(visible.replace(/\r\n?/g, '\n').replace(/\t/g, '    ').split('\n'), { ...ctx, usedIds: new Map() });
 }
 
 // 單行文字裡的 `code`、**粗體**、連結（接線步驟這種短句用）

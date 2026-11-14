@@ -14,7 +14,7 @@ test('raw HTML blocks are dropped, not passed through', () => {
   assert.ok(!out.includes('<script'));
   assert.ok(!out.includes('align='));
   assert.ok(!out.includes('alert(1)'));
-  assert.ok(out.includes('<h1>標題</h1>'));
+  assert.ok(out.includes('<h1 id="標題">標題</h1>'));
   assert.ok(out.includes('<p>內文</p>'));
 });
 
@@ -42,7 +42,7 @@ test('relative images resolve against the raw URL', () => {
 });
 
 test('fenced code is escaped and not formatted', () => {
-  const out = md('```js\nconst a = "<b>"; // **不是粗體**\n```');
+  const out = md('```\nconst a = "<b>"; // **不是粗體**\n```');
   assert.ok(out.includes('<pre><code>const a = &quot;&lt;b&gt;&quot;; // **不是粗體**</code></pre>'));
 });
 
@@ -83,7 +83,28 @@ test('blockquotes and rules render', () => {
 
 test('headings are capped to h2–h5 when a base level is given', () => {
   const out = renderMarkdown('# 一\n\n## 二', { ...CTX, headingOffset: 1 });
-  assert.ok(out.includes('<h2>一</h2>') && out.includes('<h3>二</h3>'));
+  assert.ok(out.includes('<h2 id="一">一</h2>') && out.includes('<h3 id="二">二</h3>'));
+});
+
+test('headings get an id made from their text, and a repeated heading gets a numbered one', () => {
+  const out = md('## 接線 `create()`\n\n## API Reference!\n\n> ## 接線 `create()`\n\n## [連結](https://a.b)\n\n## !!!');
+  assert.ok(out.includes('<h2 id="接線-create">接線 <code>create()</code></h2>'));
+  assert.ok(out.includes('<h2 id="api-reference">'));
+  assert.ok(out.includes('<h2 id="接線-create-2">'));
+  assert.ok(out.includes('<h2 id="連結">'));
+  assert.ok(out.includes('<h2 id="section">'));
+});
+
+test('a fenced block with a language is labelled and highlighted', () => {
+  const out = md('```js\nconst a = 1; // 註\n```');
+  assert.ok(out.includes('<pre data-lang="js"><code class="language-js">'));
+  assert.ok(out.includes('<span class="tk-k">const</span>'));
+  assert.ok(out.includes('<span class="tk-c">// 註</span>'));
+});
+
+test('a fence language that is not a plain word is ignored', () => {
+  const out = md('```"><script>\nx\n```');
+  assert.ok(out.includes('<pre><code>x</code></pre>'));
 });
 
 test('empty or missing input renders nothing', () => {

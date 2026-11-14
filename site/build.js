@@ -44,23 +44,20 @@ function withholdReadmes(repos, denyList) {
 }
 
 // 對外頁面不該出現的東西：名單裡的字詞（任何檔案）、IP 位址與私鑰（頁面）。
+// 上色之類的標記會把一串字切成好幾段，所以每個檔案看兩次：原樣，以及去掉標籤後讀者實際看到的字。
 function scanLeaks(files, denyList = []) {
-  const leaks = [];
-  for (const file of files) {
-    const lower = file.content.toLowerCase();
-    for (const term of denyList) {
-      if (lower.includes(term)) leaks.push({ path: file.path, match: '（不公開名單中的字詞）' });
-    }
-  }
-  for (const file of files.filter((f) => f.path.endsWith('.html'))) {
-    for (const m of file.content.matchAll(IPV4)) {
-      const isAddress = m.slice(1, 5).every((part) => Number(part) <= 255);
-      if (isAddress && !SAFE_IPS.has(m[0])) leaks.push({ path: file.path, match: m[0] });
-    }
-    const key = file.content.match(PRIVATE_KEY);
-    if (key) leaks.push({ path: file.path, match: key[0] });
-  }
-  return leaks;
+  const views = files.map((file) => ({ path: file.path, texts: [file.content, file.content.replace(/<[^>]*>/g, '')] }));
+  const denied = views
+    .filter((view) => denyList.some((term) => view.texts.some((text) => text.toLowerCase().includes(term))))
+    .map((view) => ({ path: view.path, match: '（不公開名單中的字詞）' }));
+  const exposed = views.filter((view) => view.path.endsWith('.html')).flatMap((view) => {
+    const addresses = view.texts.flatMap((text) => [...text.matchAll(IPV4)])
+      .filter((m) => m.slice(1, 5).every((part) => Number(part) <= 255) && !SAFE_IPS.has(m[0]))
+      .map((m) => m[0]);
+    const keys = view.texts.some((text) => PRIVATE_KEY.test(text)) ? ['PRIVATE KEY'] : [];
+    return [...new Set([...addresses, ...keys])].map((match) => ({ path: view.path, match }));
+  });
+  return [...denied, ...exposed];
 }
 
 function today() {
@@ -83,6 +80,7 @@ async function build() {
   const assets = {
     css: fs.readFileSync(path.join(__dirname, 'style.css'), 'utf8'),
     js: fs.readFileSync(path.join(__dirname, 'app.js'), 'utf8'),
+    search: fs.readFileSync(path.join(__dirname, 'search-client.js'), 'utf8'),
   };
   const denyList = parseDenyList(process.env.KITSITE_DENY);
   requireDenyList(denyList, process.env.KITSITE_REQUIRE_DENY);

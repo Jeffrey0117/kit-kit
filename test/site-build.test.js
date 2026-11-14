@@ -126,6 +126,21 @@ test('scanLeaks lets loopback addresses and version numbers through', () => {
   assert.deepStrictEqual(scanLeaks(files2), []);
 });
 
+test('scanLeaks sees through markup that splits an address, a key marker or a denied term', () => {
+  const split = (parts) => parts.map((p) => `<span class="tk-s">${p}</span>`).join('');
+  const leaks = scanLeaks([
+    { path: 'a.html', content: `<code>${split(['10.1', '.2.3'])}</code>` },
+    { path: 'b.html', content: split(['PRIVATE', ' KEY']) },
+    { path: 'c.html', content: split(['private-', 'host.example']) },
+  ], ['private-host.example']);
+  assert.deepStrictEqual(leaks.map((l) => l.path), ['c.html', 'a.html', 'b.html']);
+});
+
+test('scanLeaks reports each finding once', () => {
+  const leaks = scanLeaks([{ path: 'a.html', content: '<p>連到 10.1.2.3</p>' }]);
+  assert.strictEqual(leaks.length, 1);
+});
+
 test('scanLeaks catches an address that ends a sentence', () => {
   const leaks = scanLeaks([{ path: 'a.html', content: '主機在 10.0.0.5. 另一台 192.168.1.10...' }]);
   assert.deepStrictEqual(leaks.map((l) => l.match), ['10.0.0.5', '192.168.1.10']);
