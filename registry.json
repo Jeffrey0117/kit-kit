@@ -513,6 +513,27 @@
       "install": "npm i github:Jeffrey0117/pagetext-kit",
       "keywords": [],
       "skill": true
+    },
+    {
+      "name": "brand-footer-kit",
+      "covers": "站群品牌 footer：把一人開發者的各個站互相連起來。建置期產出靜態 HTML（爬蟲看得到，不是 JS 抓的），自動排除當前站、可輪替曝光。JSON-LD 請用 seo-schema-kit。",
+      "repo": "https://github.com/Jeffrey0117/brand-footer-kit",
+      "install": "npm i github:Jeffrey0117/brand-footer-kit",
+      "keywords": [
+        "footer",
+        "品牌",
+        "brand",
+        "站群",
+        "互連",
+        "導流",
+        "腦粉",
+        "作品站",
+        "cross-site",
+        "internal linking",
+        "內鏈",
+        "SEO"
+      ],
+      "skill": true
     }
   ]
 }
