@@ -534,6 +534,14 @@
         "SEO"
       ],
       "skill": true
+    },
+    {
+      "name": "shop-disclosure-kit",
+      "covers": "金流審核要看的揭露內容：客服聯絡資訊、退款政策。一份設定產生頁面區塊與頁尾連結，並檢查網站有沒有漏。",
+      "repo": "https://github.com/Jeffrey0117/shop-disclosure-kit",
+      "install": "npm i github:Jeffrey0117/shop-disclosure-kit",
+      "keywords": [],
+      "skill": true
     }
   ]
 }
